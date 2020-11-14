@@ -30,6 +30,7 @@ class Trainer(object):
   def __init__(self,
                model,
                strategy,
+               adversarial_loss=None,
                checkpoints_to_keep=100,
                learning_rate=0.001,
                lr_decay_steps=10000,
@@ -51,6 +52,8 @@ class Trainer(object):
     """
     self.model = model
     self.strategy = strategy
+    self.adversarial_loss = adversarial_loss
+    self.is_gan = adversarial_loss is None
     self.checkpoints_to_keep = checkpoints_to_keep
     self.grad_clip_norm = grad_clip_norm
     self.restore_keys = restore_keys
@@ -152,7 +155,7 @@ class Trainer(object):
     return {k: self.psum(v, axis=None) / n_replicas for k, v in losses.items()}
 
   @tf.function
-  def step_fn(self, batch):
+  def old_step_fn(self, batch):
     """Per-Replica training step."""
     with tf.GradientTape() as tape:
       _, losses = self.model(batch, return_losses=True, training=True)
@@ -161,5 +164,30 @@ class Trainer(object):
     grads, _ = tf.clip_by_global_norm(grads, self.grad_clip_norm)
     self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
     return losses
+
+  @tf.function
+  def step_fn(self, batch):
+    """Per-Replica training step for GANs like timbre_inpainting."""
+    # - Todo: tell the generator how many upsamplers to use
+    # Maybe put the number of upsamplers into the batch control sequences
+    # - todo: compute discriminator_loss
+    # - discriminator model must not be part of the generator model, so that model.trainable_variables dont include them
+    # - Todo here: if its a d step, generate some data
+    is_generator_step = self.step % 2 == 0 # TODO make it a parameter
+    with tf.GradientTape() as tape:
+      _, losses = self.model(batch, return_losses=True, training=True)
+      _, discriminator_losses = self.discriminator()
+    # Clip and apply gradients.
+    if is_generator_step:
+      loss = losses['total_loss']
+      variables = self.model.trainable_variables
+    else:
+      loss = losses['discriminator_loss']
+      variables = self.adversarial_loss.discriminator.trainable_variables
+    grads = tape.gradient(loss, variables)
+    grads, _ = tf.clip_by_global_norm(grads, self.grad_clip_norm)
+    self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
+    return losses
+
 
 

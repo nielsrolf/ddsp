@@ -1,0 +1,76 @@
+
+# Questions
+
+# New Classes:
+
+decoders.py:
+    ParallelWaveGANUpsampler(Decoder)
+
+discriminator.py
+
+losses.py:
+    AdversarialMSELoss(Loss)
+
+trainer.py:
+    step_fn: now updates either the generator or the discriminator
+        - Todo: tell the generator how many upsamplers to use
+        - requires access to discriminator model
+        - todo: compute discriminator_loss
+        - discriminator model must not be part of the generator model, so that model.trainable_variables dont include them
+        - Todo here: if its a d step, generate some data
+
+model.py:
+    the losses dict has get an additional entry: 'discriminator_loss'
+
+
+# Components:
+
+
+MonoAutoencoder
+    MonoEncoder:
+        (MFCC) => (z, loudness)
+
+        f0 Encoder:
+            (MFCC) => (f0)
+            CREPE
+    
+    FeatureDecoder:
+        (f0, z) => ('amps', 'harmonic_distribution', 'noise_magnitudes')
+
+    Synthesizer:Processor
+        ('f0_hz', 'amps', 'harmonic_distribution', 'noise_magnitudes') => (audio)
+
+
+GanDecoder(Decoder)
+    discriminate(audio, conditions) => [0,1]
+    discriminator_loss(real_audio, gen_audio) => loss, 
+
+
+MonoTimbreUpsamblingDecoder(GanDecoder): (f0, loudness, z) => (audio)
+
+    InitialSampler:Processor
+        (f0, loudness) => (audio)
+
+    ParallelWaveGANUpsampler:
+        (f0, loudness, z, audio) => (audio)
+
+
+
+PolyAutoEncoder
+    PolyEncoder:
+        (MFCC) => (z: (N_synth, z_dims, time), f0: (N_synth, time), loudness: (N_synth, time))
+
+    PolyDecoder: (f0, loudness, z) => audio
+        stacked applications of MonoDecoder, with shared weights
+
+
+
+AdversarialLoss
+    ParallelWaveGANDiscriminator:
+        (audio) => [0,1]
+
+    .train_step(audio_real, audio_gen)
+
+
+DiscriminatorLoss:
+
