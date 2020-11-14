@@ -189,6 +189,7 @@ def main(unused_argv):
     with strategy.scope():
       model = models.get_model()
       trainer = trainers.Trainer(model, strategy)
+    
 
     train_util.train(data_provider=gin.REQUIRED,
                      trainer=trainer,

@@ -2,16 +2,29 @@ from ddsp import core
 from ddsp.training import nn
 import gin
 import tensorflow.compat.v2 as tf
-
-
-
+from tensorflow.keras.layers import Conv1D, ZeroPadding1D
+from tensorflow_probability.layers.weight_norm import WeightNorm
     
 class MFCCDiscriminator(tf.keras.Sequential):
     pass
 
 
+class ConvStack(tf.keras.Sequential):
+    def __init__(self, padding, conv_channels, kernel_size, dilation, bias, nonlinear_activation_params):
+        super().__init__([
+            ZeroPadding1D(padding),
+            WeightNorm(Conv1D(conv_channels, kernel_size=kernel_size, padding='valid',
+                            dilation=dilation, bias=bias)),
+             getattr(tf.keras.layers, nonlinear_activation)(**nonlinear_activation_params)
+        ])
+
+
 class ParallelWaveGANDiscriminator(tf.keras.Sequential):
-    """Parallel WaveGAN Discriminator module."""
+    """Parallel WaveGAN Discriminator module.
+    
+    Could potentially be replaced bt a resnet
+    Could be moved to 
+    """
 
     def __init__(self,
                  in_channels=1,
@@ -34,57 +47,20 @@ class ParallelWaveGANDiscriminator(tf.keras.Sequential):
             nonlinear_activation (str): Nonlinear function after each conv.
             nonlinear_activation_params (dict): Nonlinear function parameters
             bias (int): Whether to use bias parameter in conv.
-            use_weight_norm (bool) Whether to use weight norm.
-                If set to true, it will be applied to all of the conv layers.
         """
         assert (kernel_size - 1) % 2 == 0, "Not support even number kernel size."
         layers = []
 
-
-        # super(ParallelWaveGANDiscriminator, self).__init__()
         conv_layers = []
-        conv_in_channels = in_channels
         for i in range(layers - 1):
             if i == 0:
                 dilation = 1
             else:
                 dilation = i
-                conv_in_channels = conv_channels
             padding = (kernel_size - 1) // 2 * dilation
-            conv_layer = [
-                Conv1d(conv_in_channels, conv_channels,
-                       kernel_size=kernel_size, padding=padding,
-                       dilation=dilation, bias=bias),
-                getattr(tf.keras.layers, nonlinear_activation)(**nonlinear_activation_params)
-            ]
-            conv_layers += conv_layer
+            conv_layers += ConvStack(padding, conv_channels, kernel_size, dilation, bias, nonlinear_activation_params)
         padding = (kernel_size - 1) // 2
-        last_conv_layer = Conv1d(
-            conv_in_channels, out_channels,
-            kernel_size=kernel_size, padding=padding, bias=bias)
+        last_conv_layer = Conv1D(out_channels, kernel_size=kernel_size, padding=padding, bias=bias)
         conv_layers += [last_conv_layer]
 
         super().__init__(conv_layers)
-
-        # apply weight norm
-        if use_weight_norm:
-            self.apply_weight_norm()
-
-
-    def apply_weight_norm(self):
-        """Apply weight normalization module from all of the layers."""
-        def _apply_weight_norm(m):
-            if isinstance(m, torch.nn.Conv1d) or isinstance(m, torch.nn.Conv2d):
-                torch.nn.utils.weight_norm(m)
-                logging.debug(f"weight norm is applied to {m}.")
-        self.apply(_apply_weight_norm)
-
-    def remove_weight_norm(self):
-        """Remove weight normalization module from all of the layers."""
-        def _remove_weight_norm(m):
-            try:
-                logging.debug(f"weight norm is removed from {m}.")
-                torch.nn.utils.remove_weight_norm(m)
-            except ValueError:  # this module didn't have weight norm
-                return
-        self.apply(_remove_weight_norm)

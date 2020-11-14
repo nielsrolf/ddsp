@@ -17,7 +17,7 @@
 
 import ddsp
 from ddsp.training.models.model import Model
-
+import tensorflow as tf
 
 class Autoencoder(Model):
   """Wrap the model function for dependency injection with gin."""
@@ -35,6 +35,10 @@ class Autoencoder(Model):
     self.decoder = decoder
     self.processor_group = processor_group
     self.loss_objs = ddsp.core.make_iterable(losses)
+    discriminators = [loss.__dict__.get('discriminator') for loss in losses]
+    discriminators = [d for d in discriminators if d is not None]
+    assert len(discriminators) <= 1, "There should only be one adversarial loss"
+    self._discriminator = discriminators[0] if len(discriminators) == 1 else None
 
   def encode(self, features, training=True):
     """Get conditioning by preprocessing then encoding."""
@@ -63,4 +67,16 @@ class Autoencoder(Model):
       self._update_losses_dict(
           self.loss_objs, features['audio'], outputs['audio_synth'])
     return outputs
+
+  @tf.function
+  def step_fn(self, batch):
+    """Per-Replica training step."""
+    with tf.GradientTape() as tape:
+      outputs, losses = self(batch, return_losses=True, training=True)
+    # Clip and apply gradients.
+    signal = self.get_audio_from_outputs(outputs)
+    grads = tape.gradient(losses['total_loss'], self.generator_variables)
+    return signal, losses, grads
+
+
 

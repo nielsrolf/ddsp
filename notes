@@ -12,12 +12,34 @@ losses.py:
     AdversarialMSELoss(Loss)
 
 trainer.py:
-    step_fn: now updates either the generator or the discriminator
+    step_fn:
+        - calls model.train_step(batch)
+
+
+
         - Todo: tell the generator how many upsamplers to use
         - requires access to discriminator model
         - todo: compute discriminator_loss
         - discriminator model must not be part of the generator model, so that model.trainable_variables dont include them
         - Todo here: if its a d step, generate some data
+
+    move step function into the model?
+        Autoencoder:
+            - classical train step
+        ParallelWaveGANUpsampler:
+            - upsamplers are trained in stages
+            - depending on the stage, the model decides how many upsamplers to use 
+            - depending on that, the input is downsampled to the generators sample rate
+            - on initialization of the next stage, weights from G[j-1] are copied to G[j]
+        Discriminator:
+            - classical train_step
+        TimbrePainting:
+            - sub models: ParallelWaveGANUpsampler, Discriminator
+            - upsampler.train_step(batch)
+            - split batch, reconstructions into audio_real, audio_gen
+            - discriminator.train_step(audio_real, audio_gen)
+            - instead of creating a new discriminator and copying the weights, we just continue to use the discriminator we already have
+
 
 model.py:
     the losses dict has get an additional entry: 'discriminator_loss'

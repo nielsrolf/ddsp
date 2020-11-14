@@ -87,9 +87,10 @@ class AdversarialMSELoss(Loss):
       - Discriminator is sample rate specific? <- maybe easier to have D work on the upsampled version always
       
   """
-  def __init__(self, discriminator, train_mode="generator"):
+  def __init__(self, discriminator, train_mode="generator", name="adversarial_loss"):
     self.discriminator = discriminator
     self.mse = MeanSquaredError()
+    self.name = name
 
   def call(self, audio_real, audio_gen, weights=None):
     y_real = self.discriminator(audio_real)

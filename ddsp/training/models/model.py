@@ -93,3 +93,18 @@ class Model(tf.keras.Model):
       Dictionary of all relevant tensors.
     """
     raise NotImplementedError('Must implement a `self.call()` method.')
+
+  @tf.function
+  def step_fn(self, batch):
+    # return signal, losses, grads
+    pass
+
+  @property
+  def discriminator(self):
+    return self.__dict__.get("_discriminator", None)
+
+  @property
+  def generator_variables(self):
+    if self.discriminator is None:
+      return self.trainable_variables
+    return [v for v in self.trainable_variables if not v in self.discriminator.trainable_variables]
