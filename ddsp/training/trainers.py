@@ -173,7 +173,7 @@ class Trainer(object):
     # - todo: compute discriminator_loss
     # - discriminator model must not be part of the generator model, so that model.trainable_variables dont include them
     # - Todo here: if its a d step, generate some data
-    is_generator_step = self.step % 2 == 0 # TODO make it a parameter
+    is_generator_step = self.step % 2 == 0 # TODO make it a parameter, maybe randomly decide what step to make
     with tf.GradientTape() as tape:
       _, losses = self.model(batch, return_losses=True, training=True)
       _, discriminator_losses = self.discriminator()

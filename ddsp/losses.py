@@ -79,8 +79,6 @@ class AdversarialMSELoss(Loss):
 
   audio_real and audio_gen can be independent of each other, i.e. audio_gen does not have to be a reconstruction of audio_gen
 
-  ? train_mode should be set by the trainer to one of ["generator", "discriminator"]
-
   # TODO use untrainable discriminator in a regular call
     decide where to train D
 
@@ -91,7 +89,6 @@ class AdversarialMSELoss(Loss):
   """
   def __init__(self, discriminator, train_mode="generator"):
     self.discriminator = discriminator
-    self.train_mode = train_mode
     self.mse = MeanSquaredError()
 
   def call(self, audio_real, audio_gen, weights=None):

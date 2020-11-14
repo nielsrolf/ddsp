@@ -64,8 +64,6 @@ class ParallelWaveGANUpsampler(Decoder):
 
     The upsamplers get trained one after another.
 
-    TODO implement discriminator here?
-
     Original pytorch implementation: https://github.com/mosheman5/timbre_painting/blob/f18c709a16a2111f7a76224a5e235c8481a9c67f/models/networks.py#L22
   """
 
@@ -114,16 +112,17 @@ class ParallelWaveGANUpsampler(Decoder):
       upsample_params (dict): Upsampling network parameters.
     """
     pass
-  #   self.in_channels = in_channels
-  #   self.out_channels = out_channels
-  #   self.aux_channels = aux_channels
-  #   self.layers = layers
-  #   self.stacks = stacks
-  #   self.kernel_size = kernel_size
+    # 
+    self.in_channels = in_channels
+    self.out_channels = out_channels
+    self.aux_channels = aux_channels
+    self.layers = layers
+    self.stacks = stacks
+    self.kernel_size = kernel_size
 
-  #   # check the number of layers and stacks
-  #   assert layers % stacks == 0
-  #   layers_per_stack = layers // stacks
+    # check the number of layers and stacks
+    assert layers % stacks == 0
+    layers_per_stack = layers // stacks
     
   #   # define first convolution
   #   self.first_conv = Conv1d1x1(in_channels, residual_channels, bias=True)
@@ -175,11 +174,6 @@ class ParallelWaveGANUpsampler(Decoder):
   #     )
   #   else:
   #     self.loudness_prenet = Conv1d1x1(1, aux_channels, bias=True)
-
-
-  #   # apply weight norm
-  #   if use_weight_norm:
-  #     self.apply_weight_norm()
   
   # def forward(self, x, c=None):
   #   """Calculate forward propagation.
@@ -212,36 +206,18 @@ class ParallelWaveGANUpsampler(Decoder):
 
   #   return x
 
-  # def remove_weight_norm(self):
-  #   """Remove weight normalization module from all of the layers."""
-  #   def _remove_weight_norm(m):
-  #     try:
-  #       logging.debug(f"weight norm is removed from {m}.")
-  #       torch.nn.utils.remove_weight_norm(m)
-  #     except ValueError:  # this module didn't have weight norm
-  #       return
-  #   self.apply(_remove_weight_norm)
+  @staticmethod
+  def _get_receptive_field_size(layers, stacks, kernel_size,
+                  dilation=lambda x: 2**x):
+    assert layers % stacks == 0
+    layers_per_cycle = layers // stacks
+    dilations = [dilation(i % layers_per_cycle) for i in range(layers)]
+    return (kernel_size - 1) * sum(dilations) + 1
 
-  # def apply_weight_norm(self):
-  #   """Apply weight normalization module from all of the layers."""
-  #   def _apply_weight_norm(m):
-  #     if isinstance(m, torch.nn.Conv1d) or isinstance(m, torch.nn.Conv2d):
-  #       torch.nn.utils.weight_norm(m)
-  #       logging.debug(f"weight norm is applied to {m}.")
-  #   self.apply(_apply_weight_norm)
-
-  # @staticmethod
-  # def _get_receptive_field_size(layers, stacks, kernel_size,
-  #                 dilation=lambda x: 2**x):
-  #   assert layers % stacks == 0
-  #   layers_per_cycle = layers // stacks
-  #   dilations = [dilation(i % layers_per_cycle) for i in range(layers)]
-  #   return (kernel_size - 1) * sum(dilations) + 1
-
-  # @property
-  # def receptive_field_size(self):
-  #   """Return receptive field size."""
-  #   return self._get_receptive_field_size(self.layers, self.stacks, self.kernel_size)
+  @property
+  def receptive_field_size(self):
+    """Return receptive field size."""
+    return self._get_receptive_field_size(self.layers, self.stacks, self.kernel_size)
 
 
   def decode(self, conditioning):

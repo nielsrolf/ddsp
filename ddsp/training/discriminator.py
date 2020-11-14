@@ -5,21 +5,12 @@ import tensorflow.compat.v2 as tf
 
 
 
-class Discriminator(tf.keras.Model):
-    """Base class for discriminators that can be used in AdversarialMSELoss
-    """
-    def __init__(self):
-        self.loss = None # loss that will be optimized in order to train D
-
-    def call(self, audio):
-        pass
-
     
-class MFCCDiscriminator(Discriminator):
+class MFCCDiscriminator(tf.keras.Sequential):
     pass
 
 
-class ParallelWaveGANDiscriminator(torch.nn.Module):
+class ParallelWaveGANDiscriminator(tf.keras.Sequential):
     """Parallel WaveGAN Discriminator module."""
 
     def __init__(self,
@@ -29,7 +20,7 @@ class ParallelWaveGANDiscriminator(torch.nn.Module):
                  layers=10,
                  conv_channels=64,
                  nonlinear_activation="LeakyReLU",
-                 nonlinear_activation_params={"negative_slope": 0.2},
+                 nonlinear_activation_params={"alpha": 0.2},
                  bias=True,
                  use_weight_norm=True,
                  ):
@@ -46,9 +37,12 @@ class ParallelWaveGANDiscriminator(torch.nn.Module):
             use_weight_norm (bool) Whether to use weight norm.
                 If set to true, it will be applied to all of the conv layers.
         """
-        super(ParallelWaveGANDiscriminator, self).__init__()
         assert (kernel_size - 1) % 2 == 0, "Not support even number kernel size."
-        self.conv_layers = torch.nn.ModuleList()
+        layers = []
+
+
+        # super(ParallelWaveGANDiscriminator, self).__init__()
+        conv_layers = []
         conv_in_channels = in_channels
         for i in range(layers - 1):
             if i == 0:
@@ -61,29 +55,21 @@ class ParallelWaveGANDiscriminator(torch.nn.Module):
                 Conv1d(conv_in_channels, conv_channels,
                        kernel_size=kernel_size, padding=padding,
                        dilation=dilation, bias=bias),
-                getattr(torch.nn, nonlinear_activation)(inplace=True, **nonlinear_activation_params)
+                getattr(tf.keras.layers, nonlinear_activation)(**nonlinear_activation_params)
             ]
-            self.conv_layers += conv_layer
+            conv_layers += conv_layer
         padding = (kernel_size - 1) // 2
         last_conv_layer = Conv1d(
             conv_in_channels, out_channels,
             kernel_size=kernel_size, padding=padding, bias=bias)
-        self.conv_layers += [last_conv_layer]
+        conv_layers += [last_conv_layer]
+
+        super().__init__(conv_layers)
 
         # apply weight norm
         if use_weight_norm:
             self.apply_weight_norm()
 
-    def forward(self, x):
-        """Calculate forward propagation.
-        Args:
-            x (Tensor): Input noise signal (B, 1, T).
-        Returns:
-            Tensor: Output tensor (B, 1, T)
-        """
-        for f in self.conv_layers:
-            x = f(x)
-        return x
 
     def apply_weight_norm(self):
         """Apply weight normalization module from all of the layers."""
