@@ -1,5 +1,18 @@
 
+- Image for schema
+
+
 # Questions
+Todo:
+- add scheduler
+- add hyperparams for d_optimizer to trainer
+- add hyperparams for d_optimizer to timbrepainting.gin
+- pass conditioning info to d
+- implement f0synthesizer for initial upsampler
+- implement upsampler
+- review discriminator conv layer
+
+- add as features for the upsampler a bunch of sinus waves that have frequencies according to harmonics
 
 # New Classes:
 
@@ -12,18 +25,29 @@ losses.py:
     AdversarialMSELoss(Loss)
 
 trainer.py:
-    step_fn:
-        - calls model.train_step(batch)
+    __init__:
+        - create discriminator optimizer
+        - define a learning schedule for the different steps and number of generators to use in each step 
+
+    scheduler:
+        - create a tf.function with:
+            - control flow to execute g or d step
+            - control flow to set number of upsamplers
+            - control flow only depends on tf.Tensor objects
+
+    separate:
+        gan.py from autoencoder.py
+        GanTrainer from trainer
+
+    
 
 
+    step_fn: call to scheduler
 
         - Todo: tell the generator how many upsamplers to use
-        - requires access to discriminator model
-        - todo: compute discriminator_loss
-        - discriminator model must not be part of the generator model, so that model.trainable_variables dont include them
-        - Todo here: if its a d step, generate some data
+        - Todo here: get audio_real audio_gen
 
-    move step function into the model?
+    step functions of different models:
         Autoencoder:
             - classical train step
         ParallelWaveGANUpsampler:
