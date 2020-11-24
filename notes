@@ -1,28 +1,50 @@
-
-- Image for schema
-
-
 # Questions
+- why is scale_fn included in e.g. Additive synth? why wouldn't I just scale it in the network that produces the input
+- where is this scale_fn actually used (by which applications)? Loudness is scaled by default, but isn't it computed by some fixed algorithm?
+
+- why can almost all layers ignore the number of samples in the time axis?
+
 Todo:
-- add scheduler
+- timbre painting training stages will not be handled from the trainer loop. instead, trainer will be called for each stage, and we use some generic way to create a model from pretrained modules
+- add scheduler?
+    - maybe probabilistic, i.e. we randomly sample which steps to include, if there is no clean way to do it always the same 
+
 - add hyperparams for d_optimizer to trainer
 - add hyperparams for d_optimizer to timbrepainting.gin
 - pass conditioning info to d
-- implement f0synthesizer for initial upsampler
 - implement upsampler
 - review discriminator conv layer
 
 - add as features for the upsampler a bunch of sinus waves that have frequencies according to harmonics
 
+
 # New Classes:
 
+synths.py:
+    BasicUpsampler
+        - Like additive synths without harmonics
+
 decoders.py:
-    ParallelWaveGANUpsampler(Decoder)
+    TimbrePaintingDecoder(Decoder) <- BasicUpsampler, ParallelWaveGANUpsampler
+        - Combines a BasicUpsampler and a stack of ParallelWaveGANUpsamplers
+    ParallelWaveGANUpsampler
+        - Architecture?
 
 discriminator.py
+    Discriminator
+        - discriminator takes a dict with controls and the target audio
+        - discriminator can decide which of these info to use by itself
+        - with this setup, we can model any kind of conditioning information
+    ParallelWaveGANDiscriminator(Discriminator)
+        - does not use any conditioning features 
+
+
+gan.py
+    Implements the GAN train step, is otherwise like an autoencoder
 
 losses.py:
-    AdversarialMSELoss(Loss)
+    AdversarialMSELoss(Loss) <- Discriminator
+
 
 trainer.py:
     __init__:
@@ -51,10 +73,8 @@ trainer.py:
         Autoencoder:
             - classical train step
         ParallelWaveGANUpsampler:
-            - upsamplers are trained in stages
-            - depending on the stage, the model decides how many upsamplers to use 
-            - depending on that, the input is downsampled to the generators sample rate
-            - on initialization of the next stage, weights from G[j-1] are copied to G[j]
+            - can take another upsampler to copy initial weights
+            - downsamples target to output sample rate
         Discriminator:
             - classical train_step
         TimbrePainting:

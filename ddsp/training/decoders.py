@@ -19,6 +19,7 @@ from ddsp import core
 from ddsp.training import nn
 import gin
 import tensorflow.compat.v2 as tf
+from ddsp.synths import BasicUpsampler
 
 tfkl = tf.keras.layers
 
@@ -55,12 +56,40 @@ class Decoder(tfkl.Layer):
         raise NotImplementedError
 
 
-class ParallelWaveGANUpsampler(Decoder):
-  """Stack of layers that perform repeatedly:
-    (f0, loudness) -> initital audio (Non parametric)
-    (audio, condition) -> Upsampling -> Residual -> upsampled_audio
-    In total, this computes:
-    (f0, loudness, z) => (audio)
+class TimbrePaintingDecoder(Decoder):
+  def __init__(self,
+               name=None,
+               input_keys=('ld_scaled', 'f0_scaled', 'z'),
+               output_splits=(('audio', 1)),
+               sample_rates = [2000, 4000, 8000, 16000],
+               n_samples = 
+               ):
+    super().__init__(output_splits=output_splits, name=name)
+    self.basic_upsampler = BasicUpsampler(sample_rate=sample_rates[0])
+    self.upsamplers = []
+    for sample_rate in sample_rates:
+      upsampler = ParallelWaveGANUpsampler(
+        input_keys=upsampler_inputs,
+        output_splits=(('audio', 1)),
+        name=f"upsampler{sample_rate}"
+      )
+      self.upsamplers += upsampler
+
+  def decode(self, conditioning):
+    """Takes in conditioning dictionary, returns dictionary of signals."""
+    conditioning = dict(conditioning)
+    conditioning['audio'] = self.basic_upsampler(conditioning)
+
+    for upsampler in range(self.upsamplers):
+        conditioning['audio'] = upsampler(conditioning)
+
+    return conditioning['audio']
+
+
+
+class ParallelWaveGANUpsampler(tfkl.Layer):
+  """Single Upsampler that performs:
+  (loudness, f0, z, audio_in) -> (audio_out) 
 
     The upsamplers get trained one after another.
 
@@ -68,8 +97,8 @@ class ParallelWaveGANUpsampler(Decoder):
   """
 
   def __init__(self,
-                input_keys=('ld_scaled', 'f0_scaled', 'z'),
-                output_splits=(('audio', 1)),
+                input_keys=('ld_scaled', 'f0_scaled', 'z', 'audio'),
+                output_splits=(('signal', 1)),
                 name=None,
                 in_channels=1,
                 out_channels=1,
@@ -89,7 +118,7 @@ class ParallelWaveGANUpsampler(Decoder):
                 # upsample_params={"upsample_scales": [4, 4, 4, 4]},
                 # affine = False,
                 norm=True):
-    """Initialize Parallel WaveGAN Generator module.
+    """Initialize Parallel WaveGAN Generator module. -> this is already a single upsampler
     Args:
       input_keys:  (tuple[string]) required keys for the conditioning dict
       output_splits: names for the splits of the outputs and the number of dimensions used for each key
@@ -218,7 +247,6 @@ class ParallelWaveGANUpsampler(Decoder):
   def receptive_field_size(self):
     """Return receptive field size."""
     return self._get_receptive_field_size(self.layers, self.stacks, self.kernel_size)
-
 
   def decode(self, conditioning):
       """Takes in conditioning dictionary, returns dictionary of signals."""

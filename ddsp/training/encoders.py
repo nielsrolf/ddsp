@@ -126,6 +126,12 @@ class MfccTimeDistributedRnnEncoder(ZEncoder):
     return z
 
 
+class DilatedConvZEncoder(ZEncoder):
+  """TODO Niels: reuse ParallelWaveGANDiscriminator here
+  """
+  pass
+
+
 # Transcribing Autoencoder Encoders --------------------------------------------
 @gin.register
 class ResnetSinusoidalEncoder(nn.DictLayer):
