@@ -6,6 +6,8 @@ data/
 Untitled*
 models/
 .vscode/
+**/*.tfrecord*
+
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,jupyternotebooks
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,jupyternotebooks
@@ -160,3 +162,5 @@ dmypy.json
 
 # profiling data
 .prof
+
+.DS_Store

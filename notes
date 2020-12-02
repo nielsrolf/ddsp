@@ -4,6 +4,15 @@
 
 - why can almost all layers ignore the number of samples in the time axis?
 
+Understand this data shit
+- Do a tutorial on tfds that covers tfrecords
+- Create a dataset from a mp3 files and load a dataset into a notebook
+
+
+Implement Upsampler:
+- ConvStack
+- resample
+
 Todo:
 - timbre painting training stages will not be handled from the trainer loop. instead, trainer will be called for each stage, and we use some generic way to create a model from pretrained modules
 - add scheduler?

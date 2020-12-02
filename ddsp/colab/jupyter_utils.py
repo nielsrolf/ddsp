@@ -13,7 +13,7 @@ def show_audio(wav, sample_rate=DEFAULT_SAMPLE_RATE, focus_points=[0.3], focus_w
     try:
         wav = wav.numpy()
     except:
-        assert isinstance(wav, np.array)
+        assert isinstance(wav, np.ndarray)
     wav = wav.squeeze()
     display(Audio(data=wav, rate=sample_rate))
     

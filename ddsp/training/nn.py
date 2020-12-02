@@ -190,6 +190,19 @@ class Normalize(tfkl.Layer):
     return inv_ensure_4d(x, n_dims)
 
 
+class DilatedConvLayer(tf.keras.Sequential):
+  """LayerNorm -> ReLU -> Conv layer."""
+
+  def __init__(self, ch, k, dilation_rate, **kwargs):
+    """Downsample frequency by stride."""
+    layers = [
+        tfkl.LayerNormalization(),
+        tfkl.Activation(tf.nn.relu),
+        tfkl.Conv1D(ch, k, dilation_rate=dilation_rate, padding='same'),
+    ]
+    super().__init__(layers, **kwargs)
+
+
 # ------------------ ResNet ----------------------------------------------------
 @gin.register
 class NormReluConv(tf.keras.Sequential):
