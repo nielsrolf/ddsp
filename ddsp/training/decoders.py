@@ -104,24 +104,25 @@ class Upsampler(Decoder):
     def fc_stack():
       return nn.FcStack(ch, layers_per_input_stack)
 
-    def no_stack(audio):
-      return audio
-
     def conv_stack(dilation_rate):
       return nn.DilatedConvLayer(ch, kernel, dilation_rate)
 
     self.n_timesteps = n_timesteps
-    self.input_keys = input_keys
+    self.input_keys = [k for k in input_keys if k != 'audio']
 
     # Layers.
-    self.input_stacks = [fc_stack() if k != 'audio' else no_stack for k in input_keys]
+    self.input_stacks = [fc_stack() for k in input_keys if k != 'audio']
     self.conv_layers = [conv_stack(2**i) for i in range(1, conv_layers + 1)]
-    self.dense_out = tfkl.Dense(self.n_out)
+    self.dense_out = tfkl.Dense(1)
 
   def decode(self, conditioning):
     # Initial processing.
+    audio = conditioning.pop("audio")
+    audio = core.resample(audio, self.n_timesteps)
+
     inputs = [conditioning[k] for k in self.input_keys]
     inputs = [stack(x) for stack, x in zip(self.input_stacks, inputs)]
+
     # Resample all inputs to the target sample rate
     inputs = [core.resample(x, self.n_timesteps) for x in inputs]
     # Conv layers
@@ -130,10 +131,10 @@ class Upsampler(Decoder):
     for conv_layer in self.conv_layers:
       x = conv_layer(x)
     # Final processing.
-    return self.dense_out(x)
+    return self.dense_out(x) + audio
 
 
-@gin.register
+  #@gin.register
 class RnnFcDecoder(Decoder):
   """RNN and FC stacks for f0 and loudness."""
 
