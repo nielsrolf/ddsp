@@ -3,18 +3,19 @@ from ddsp.training import nn
 import gin
 import tensorflow.compat.v2 as tf
 from tensorflow.keras.layers import Conv1D, ZeroPadding1D
-from tensorflow_probability.layers.weight_norm import WeightNorm
+import tensorflow_addons as tfa
+
     
 class MFCCDiscriminator(tf.keras.Sequential):
     pass
 
 
 class ConvStack(tf.keras.Sequential):
-    def __init__(self, padding, conv_channels, kernel_size, dilation, bias, nonlinear_activation_params):
+    def __init__(self, padding, conv_channels, kernel_size, dilation_rate, nonlinear_activation, nonlinear_activation_params):
         super().__init__([
             ZeroPadding1D(padding),
-            WeightNorm(Conv1D(conv_channels, kernel_size=kernel_size, padding='valid',
-                            dilation=dilation, bias=bias)),
+            tfa.layers.WeightNormalization(Conv1D(conv_channels, kernel_size=kernel_size, padding='valid',
+                            dilation_rate=dilation_rate)),
              getattr(tf.keras.layers, nonlinear_activation)(**nonlinear_activation_params)
         ])
 
@@ -34,7 +35,6 @@ class ParallelWaveGANDiscriminator(tf.keras.Sequential):
                  conv_channels=64,
                  nonlinear_activation="LeakyReLU",
                  nonlinear_activation_params={"alpha": 0.2},
-                 bias=True,
                  use_weight_norm=True,
                  ):
         """Initialize Parallel WaveGAN Discriminator module.
@@ -49,18 +49,17 @@ class ParallelWaveGANDiscriminator(tf.keras.Sequential):
             bias (int): Whether to use bias parameter in conv.
         """
         assert (kernel_size - 1) % 2 == 0, "Not support even number kernel size."
-        layers = []
 
         conv_layers = []
         for i in range(layers - 1):
             if i == 0:
-                dilation = 1
+                dilation_rate = 1
             else:
-                dilation = i
-            padding = (kernel_size - 1) // 2 * dilation
-            conv_layers += ConvStack(padding, conv_channels, kernel_size, dilation, bias, nonlinear_activation_params)
+                dilation_rate = i
+            padding = (kernel_size - 1) // 2 * dilation_rate
+            conv_layers += [ConvStack(padding, conv_channels, kernel_size, dilation_rate, nonlinear_activation, nonlinear_activation_params)]
         padding = (kernel_size - 1) // 2
-        last_conv_layer = Conv1D(out_channels, kernel_size=kernel_size, padding=padding, bias=bias)
+        last_conv_layer = Conv1D(out_channels, kernel_size=kernel_size, padding='same')
         conv_layers += [last_conv_layer]
 
         super().__init__(conv_layers)
