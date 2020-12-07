@@ -71,7 +71,7 @@ def mean_difference(target, value, loss_type='L1', weights=None):
   else:
     raise ValueError('Loss type ({}), must be '
                      '"L1", "L2", or "COSINE"'.format(loss_type))
-
+  
 
 
 class AdversarialMSELoss(Loss):
@@ -97,8 +97,6 @@ class AdversarialMSELoss(Loss):
     y_gen = self.discriminator(audio_gen)
     return self.mse(y_real, tf.ones_like(y_real)) + self.mse(y_gen, tf.zeros_like(y_real))
 
-
-  
 
 @gin.register
 class SpectralLoss(Loss):

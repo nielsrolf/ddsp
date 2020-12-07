@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Lint as: python3
-"""Model that outputs coefficeints of an additive synthesizer."""
+"""Model that encodes audio features and decodes with a ddsp processor group."""
 
 import ddsp
 from ddsp.training.models.model import Model
@@ -43,32 +43,36 @@ class Autoencoder(Model):
   def encode(self, features, training=True):
     """Get conditioning by preprocessing then encoding."""
     if self.preprocessor is not None:
-      conditioning = self.preprocessor(features, training=training)
-    else:
-      conditioning = features
+      features.update(self.preprocessor(features, training=training))
     if self.encoder is not None:
-      z_dict = self.encoder(conditioning)
-      conditioning.update(z_dict)
-    return conditioning
+      features.update(self.encoder(features))
+    return features
 
-  def decode(self, conditioning, training=True):
+  def decode(self, features, training=True):
     """Get generated audio by decoding than processing."""
-    processor_inputs = self.decoder(conditioning, training=training)
-    return self.processor_group(processor_inputs)
+    features.update(self.decoder(features, training=training))
+    return self.processor_group(features)
 
   def get_audio_from_outputs(self, outputs):
     """Extract audio output tensor from outputs dict of call()."""
-    return self.processor_group.get_signal(outputs)
+    return outputs['audio_synth']
 
   def call(self, features, training=True):
     """Run the core of the network, get predictions and loss."""
-    conditioning = self.encode(features, training=training)
-    processor_inputs = self.decoder(conditioning, training=training)
-    outputs = self.processor_group.get_controls(processor_inputs)
-    outputs['audio_synth'] = self.processor_group.get_signal(outputs)
+    features = self.encode(features, training=training)
+    features.update(self.decoder(features, training=training))
+
+    # Run through processor group.
+    pg_out = self.processor_group(features, return_outputs_dict=True)
+
+    # Parse outputs
+    outputs = pg_out['controls']
+    outputs['audio_synth'] = pg_out['signal']
+
     if training:
       self._update_losses_dict(
           self.loss_objs, features['audio'], outputs['audio_synth'])
+
     return outputs
 
   @tf.function

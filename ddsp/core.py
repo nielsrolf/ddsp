@@ -124,9 +124,9 @@ def nested_lookup(nested_key: Text,
     try:
       value = value[key]
     except KeyError:
-      raise KeyError(f'Key \'{key}\' as a part of \'{nested_key}\' not found '
-                     'during nested dictionary lookup, out of available keys: '
-                     f'{nested_keys(nested_dict)}')
+      raise KeyError(f'Key \'{key}\' as a part of nested key \'{nested_key}\' '
+                     'not found during nested dictionary lookup, out of '
+                     f'available keys: {nested_keys(nested_dict)}')
   return value
 
 
@@ -675,7 +675,7 @@ def harmonic_to_sinusoidal(harm_amp, harm_dist, f0_hz, sample_rate=16000):
   return amps, freqs
 
 
-# Additive Synthesizer ---------------------------------------------------------
+# Harmonic Synthesizer ---------------------------------------------------------
 # TODO(jesseengel): Remove reliance on global injection for angular cumsum.
 @gin.configurable
 def angular_cumsum(angular_frequency, chunk_size=1000):

@@ -13,9 +13,8 @@
 # limitations under the License.
 
 # Lint as: python3
-"""Library of encoder objects."""
+"""Library of decoder layers."""
 
-from ddsp import core
 from ddsp.training import nn
 import gin
 import tensorflow.compat.v2 as tf
@@ -25,6 +24,7 @@ tfkl = tf.keras.layers
 
 
 # ------------------ Decoders --------------------------------------------------
+<<<<<<< HEAD
 class Decoder(tfkl.Layer):
   """Base class to implement any decoder.
 
@@ -134,21 +134,22 @@ class Upsampler(Decoder):
     return self.dense_out(x) + audio
 
 
-  #@gin.register
-class RnnFcDecoder(Decoder):
+
+@gin.register
+class RnnFcDecoder(nn.OutputSplitsLayer):
   """RNN and FC stacks for f0 and loudness."""
 
   def __init__(self,
-         rnn_channels=512,
-         rnn_type='gru',
-         ch=512,
-         layers_per_stack=3,
-         input_keys=('ld_scaled', 'f0_scaled', 'z'),
-         output_splits=(('amps', 1), ('harmonic_distribution', 40)),
-         name=None):
-    super().__init__(output_splits=output_splits, name=name)
-    def stack(): return nn.FcStack(ch, layers_per_stack)
-    self.input_keys = input_keys
+               rnn_channels=512,
+               rnn_type='gru',
+               ch=512,
+               layers_per_stack=3,
+               input_keys=('ld_scaled', 'f0_scaled', 'z'),
+               output_splits=(('amps', 1), ('harmonic_distribution', 40)),
+               **kwargs):
+    super().__init__(
+        input_keys=input_keys, output_splits=output_splits, **kwargs)
+    stack = lambda: nn.FcStack(ch, layers_per_stack)
 
     # Layers.
     self.input_stacks = [stack() for k in self.input_keys]
@@ -164,9 +165,8 @@ class RnnFcDecoder(Decoder):
     self.z_stack = self.input_stacks[2] if len(
       self.input_stacks) >= 3 else None
 
-  def decode(self, conditioning):
+  def compute_output(self, *inputs):
     # Initial processing.
-    inputs = [conditioning[k] for k in self.input_keys]
     inputs = [stack(x) for stack, x in zip(self.input_stacks, inputs)]
     print("RnnFcDecoder:")
     print({k: x.shape for k, x in zip(self.input_keys, inputs)})
@@ -177,6 +177,5 @@ class RnnFcDecoder(Decoder):
     x = tf.concat(inputs + [x], axis=-1)
 
     # Final processing.
-    x = self.out_stack(x)
-    return self.dense_out(x)
+    return self.out_stack(x)
 
