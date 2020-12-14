@@ -61,16 +61,15 @@ class TimbrePaintingDecoder(Decoder):
               name=None,
               input_keys=('amplitudes', 'f0_hz', 'z'),
               sample_rates=[2000, 4000, 8000, 16000],
-              n_total=64000
-              ):
-    super().__init__(output_splits=(('audio', 1),), name=name)
+              n_total=64000):
+    super().__init__(output_splits=(('audio_tensor', 1),), name=name)
     n_initial = int(sample_rates[0]/sample_rates[-1]*n_total)
     self.basic_upsampler = BasicUpsampler(n_samples=n_initial,sample_rate=sample_rates[0])
     self.upsamplers = []
     for sample_rate in sample_rates:
       upsampler = Upsampler(
         int(sample_rate/sample_rates[-1]*n_total),
-        input_keys=input_keys+('audio',),
+        input_keys=input_keys+('audio_tensor',),
         name=f"upsampler{sample_rate}"
       )
       self.upsamplers += [upsampler]
@@ -79,12 +78,12 @@ class TimbrePaintingDecoder(Decoder):
     """Takes in conditioning dictionary, returns dictionary of signals."""
     conditioning = dict(conditioning)
     audio = self.basic_upsampler(conditioning['amplitudes'], conditioning['f0_hz'])
-    conditioning['audio'] = tf.expand_dims(audio, 2)
+    conditioning['audio_tensor'] = tf.expand_dims(audio, 2)
 
     for upsampler in self.upsamplers:
-      conditioning['audio'] = upsampler.decode(conditioning)
+      conditioning['audio_tensor'] = upsampler.decode(conditioning)
 
-    return conditioning['audio']
+    return conditioning['audio_tensor']
 
 
 class Upsampler(Decoder):
@@ -99,7 +98,7 @@ class Upsampler(Decoder):
          input_keys=('ld_scaled', 'f0_scaled', 'z', 'audio'),
          name=None):
     super().__init__(output_splits=(('audio', 1),), name=name)
-    assert 'audio' in input_keys, f"Upsampler requires one input to be named audio. Got input_keys: {str(input_keys)}"
+    assert 'audio_tensor' in input_keys, f"Upsampler requires one input to be named audio. Got input_keys: {str(input_keys)}"
 
     def fc_stack():
       return nn.FcStack(ch, layers_per_input_stack)
@@ -108,16 +107,16 @@ class Upsampler(Decoder):
       return nn.DilatedConvLayer(ch, kernel, dilation_rate)
 
     self.n_timesteps = n_timesteps
-    self.input_keys = [k for k in input_keys if k != 'audio']
+    self.input_keys = [k for k in input_keys if k != 'audio_tensor']
 
     # Layers.
-    self.input_stacks = [fc_stack() for k in input_keys if k != 'audio']
+    self.input_stacks = [fc_stack() for k in input_keys if k != 'audio_tensor']
     self.conv_layers = [conv_stack(2**i) for i in range(1, conv_layers + 1)]
     self.dense_out = tfkl.Dense(1)
 
   def decode(self, conditioning):
     # Initial processing.
-    audio = conditioning.pop("audio")
+    audio = conditioning.pop("audio_tensor")
     audio = core.resample(audio, self.n_timesteps)
 
     inputs = [conditioning[k] for k in self.input_keys]

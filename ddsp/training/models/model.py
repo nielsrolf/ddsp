@@ -104,14 +104,23 @@ class Model(tf.keras.Model):
   @tf.function
   def step_fn(self, batch):
     # return signal, losses, grads
-    pass
+    raise NotImplementedError('Must implement a `self.step_fn()` method.')
 
   @property
   def discriminator(self):
     return self.__dict__.get("_discriminator", None)
+  
+  @property
+  def is_gan(self):
+    return self.discriminator is not None
 
   @property
   def generator_variables(self):
-    if self.discriminator is None:
-      return self.trainable_variables
-    return [v for v in self.trainable_variables if not v in self.discriminator.trainable_variables]
+    return [v for v in self.trainable_variables if not v in self.discriminator_variables]
+
+  @property
+  def discriminator_variables(self):
+    if self.is_gan:
+      return self.discriminator.trainable_variables
+    else:
+      return []

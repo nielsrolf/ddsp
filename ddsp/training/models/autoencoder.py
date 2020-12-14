@@ -17,7 +17,9 @@
 
 import ddsp
 from ddsp.training.models.model import Model
+from ddsp.losses import mean_difference
 import tensorflow as tf
+
 
 class Autoencoder(Model):
   """Wrap the model function for dependency injection with gin."""
@@ -28,6 +30,7 @@ class Autoencoder(Model):
                decoder=None,
                processor_group=None,
                losses=None,
+               discriminator=None,
                **kwargs):
     super().__init__(**kwargs)
     self.preprocessor = preprocessor
@@ -35,10 +38,7 @@ class Autoencoder(Model):
     self.decoder = decoder
     self.processor_group = processor_group
     self.loss_objs = ddsp.core.make_iterable(losses)
-    discriminators = [loss.__dict__.get('discriminator') for loss in losses]
-    discriminators = [d for d in discriminators if d is not None]
-    assert len(discriminators) <= 1, "There should only be one adversarial loss"
-    self._discriminator = discriminators[0] if len(discriminators) == 1 else None
+    self._discriminator = discriminator
 
   def encode(self, features, training=True):
     """Get conditioning by preprocessing then encoding."""
@@ -56,6 +56,13 @@ class Autoencoder(Model):
   def get_audio_from_outputs(self, outputs):
     """Extract audio output tensor from outputs dict of call()."""
     return outputs['audio_synth']
+  
+  def _add_discriminator_loss(self, outputs):
+    if not self.is_gan:
+      return
+    batch = {k if k != 'audio_synth' else 'discriminator_audio': v for k, v in outputs.items()}
+    scores = self.discriminator(batch)['score']
+    self._losses_dict['adversarial_loss'] = mean_difference(tf.ones_like(scores), scores, 'L2')
 
   def call(self, features, training=True):
     """Run the core of the network, get predictions and loss."""
@@ -72,6 +79,7 @@ class Autoencoder(Model):
     if training:
       self._update_losses_dict(
           self.loss_objs, features['audio'], outputs['audio_synth'])
+      self._add_discriminator_loss(outputs)
 
     return outputs
 
@@ -80,10 +88,27 @@ class Autoencoder(Model):
     """Per-Replica training step."""
     with tf.GradientTape() as tape:
       outputs, losses = self(batch, return_losses=True, training=True)
-    # Clip and apply gradients.
-    signal = self.get_audio_from_outputs(outputs)
     grads = tape.gradient(losses['total_loss'], self.generator_variables)
-    return signal, losses, grads
+    return outputs, losses, grads
+
+  @tf.function
+  def discriminator_step_function(self, batch):
+    """At this point, the batch already contains the generator output.
+    The samples in batch['audio'] and batch['audio_synth'] correspond to each other.
+    In order to prevent overfitting on a pattern that is realistic by itself but 
+    different from the original sample, it is randomly sampled wether to use the 
+    original or synthesized version of a sample.
+    """
+    outputs = {}
+    use_real_sample = tf.round(tf.random.uniform([batch['audio'].shape[0], 1, 1], maxval=1))
+    batch['discriminator_audio'] = use_real_sample * batch['audio'] + (1 - use_real_sample) * batch['audio_synth']
+    use_real_sample = tf.squeeze(use_real_sample)
+    with tf.GradientTape() as tape:
+      scores = self.discriminator(batch)['score']
+      outputs['discriminator_loss'] = mean_difference(use_real_sample, scores, 'L2')
+    grads = tape.gradient(outputs['discriminator_loss'], self.discriminator_variables)
+    return losses, grads
+
 
 
 

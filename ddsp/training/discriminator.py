@@ -1,9 +1,10 @@
 from ddsp import core
-from ddsp.training import nn
+from ddsp.training import nn, preprocessing
 import gin
 import tensorflow.compat.v2 as tf
 from tensorflow.keras.layers import Conv1D, ZeroPadding1D
 import tensorflow_addons as tfa
+
 
 class Discriminator(nn.DictLayer):
   """Base class to implement disriminators.
@@ -20,14 +21,13 @@ class Discriminator(nn.DictLayer):
     """Resamples all inputs to the maximal resolution and computes the score"""
     n_timesteps = max(i.shape[1] for i in args)
     inputs = [core.resample(i, n_timesteps) for i in args]
+    inputs  = [preprocessing.at_least_3d(i) for i in inputs]
     score  = self.compute_score(*inputs)
     score = tf.reduce_mean(score, axis=list(range(1, score.ndim)))
     return score
   
   def compute_score(self, *args):
     raise NotImplementedError()
-  
-
 
   
 class MFCCDiscriminator(tf.keras.Sequential):

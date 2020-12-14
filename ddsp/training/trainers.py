@@ -51,8 +51,6 @@ class Trainer(object):
     """
     self.model = model
     self.strategy = strategy
-    self.discriminator = model.discriminator
-    self.is_gan = self.discriminator is None
     self.checkpoints_to_keep = checkpoints_to_keep
     self.grad_clip_norm = grad_clip_norm
     self.restore_keys = restore_keys
@@ -63,9 +61,19 @@ class Trainer(object):
         decay_steps=lr_decay_steps,
         decay_rate=lr_decay_rate)
 
+    if self.model.is_gan:
+      d_lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+          initial_learning_rate=learning_rate,
+          decay_steps=lr_decay_steps,
+          decay_rate=lr_decay_rate) # TODO correct learning schedule + optimizer?
+
     with self.strategy.scope():
       optimizer = tf.keras.optimizers.Adam(lr_schedule)
       self.optimizer = optimizer
+      if self.model.is_gan:
+        d_optimizer = tf.keras.optimizers.Adam(d_lr_schedule)
+        self.d_optimizer = d_optimizer
+
 
   def save(self, save_dir):
     """Saves model and optimizer to a checkpoint."""
@@ -156,25 +164,15 @@ class Trainer(object):
   @tf.function
   def step_fn(self, batch):
     """Per-Replica training step."""
-    print("step function is called") # wird die immer wieder aufgerufen, oder einmal von tensorflow compiled?
-    # wenn die immer aufgerufen wird, kann hier ein python scheduler entscheiden, was für ein training step gemacht werden soll
-    signal, losses, grads = self.model.step_fn(batch)
+    outputs, losses, grads = self.model.step_fn(batch)
     grads, _ = tf.clip_by_global_norm(grads, self.grad_clip_norm)
     self.optimizer.apply_gradients(zip(grads, self.model.generator_variables))
-    return losses
-    # if self.is_gan:
-    #   audio_real = downsample(batch)
-    #   audio_gen = tf.stop_gradient(signal)
-    #   # dont use real and reconstructed version of the same sample
-    #   is_real = np.random.rand(len(audio_real)) > 0.5
-    #   d_input = 
-    #   audio_real = audio_real[use_real_version]
-    #   audio_gen = audio_gen[not use_real_version]
-    #   _, d_losses, grads = self.discriminator.step_fn(audio_real, audio_gen)
-    #   grads, _ = tf.clip_by_global_norm(grads, self.grad_clip_norm)
-    #   self.discriminator_optimizer.apply_gradients(zip(grads, self.discriminator.trainable_variables))
-    #   losses.update(d_losses)
-    # return losses
 
+    if self.model.is_gan:
+      d_losses, grads = self.model.discriminator_step_fn(outputs)
+      grads, _ = tf.clip_by_global_norm(grads, self.grad_clip_norm)
+      self.d_optimizer.apply_gradients(zip(grads, self.model.discriminator_variables))
+      
+    return losses
 
 

@@ -27,7 +27,6 @@ import gin
 import numpy as np
 import tensorflow.compat.v2 as tf
 import tensorflow_probability as tfp
-from tensorflow.keras.losses import MeanSquaredError
 
 tfd = tfp.distributions
 tfkl = tf.keras.layers
@@ -72,31 +71,6 @@ def mean_difference(target, value, loss_type='L1', weights=None):
     raise ValueError('Loss type ({}), must be '
                      '"L1", "L2", or "COSINE"'.format(loss_type))
   
-
-
-class AdversarialMSELoss(Loss):
-  """Trainable adversarial loss
-
-  audio_real and audio_gen can be independent of each other, i.e. audio_gen does not have to be a reconstruction of audio_gen
-
-  # TODO use untrainable discriminator in a regular call
-    decide where to train D
-
-    - As in mosheman5/timbre_painting:
-      - MSE loss on labels
-      - Discriminator is sample rate specific? <- maybe easier to have D work on the upsampled version always
-      
-  """
-  def __init__(self, discriminator, train_mode="generator", name="adversarial_loss"):
-    self.discriminator = discriminator
-    self.mse = MeanSquaredError()
-    self.name = name
-
-  def call(self, audio_real, audio_gen, weights=None):
-    y_real = self.discriminator(audio_real)
-    y_gen = self.discriminator(audio_gen)
-    return self.mse(y_real, tf.ones_like(y_real)) + self.mse(y_gen, tf.zeros_like(y_real))
-
 
 @gin.register
 class SpectralLoss(Loss):
