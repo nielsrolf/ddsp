@@ -16,6 +16,7 @@
 """Library of decoder layers."""
 
 from ddsp.training import nn
+from ddsp import core
 import gin
 import tensorflow.compat.v2 as tf
 from ddsp.synths import BasicUpsampler
@@ -24,7 +25,6 @@ tfkl = tf.keras.layers
 
 
 # ------------------ Decoders --------------------------------------------------
-<<<<<<< HEAD
 class Decoder(tfkl.Layer):
   """Base class to implement any decoder.
 
@@ -135,7 +135,7 @@ class Upsampler(Decoder):
 
 
 
-@gin.register
+# @gin.register
 class RnnFcDecoder(nn.OutputSplitsLayer):
   """RNN and FC stacks for f0 and loudness."""
 
