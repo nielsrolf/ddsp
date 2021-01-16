@@ -1,4 +1,4 @@
-# Copyright 2020 The DDSP Authors.
+# Copyright 2021 The DDSP Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,13 +17,18 @@
 
 from ddsp.training.models.autoencoder import Autoencoder
 from ddsp.training.models.inverse_synthesis import InverseSynthesis
+from ddsp.training.models.midi_autoencoder import MidiAutoencoder
+from ddsp.training.models.midi_autoencoder import ZMidiAutoencoder
 from ddsp.training.models.model import Model
 import gin
+
 
 _configurable = lambda cls: gin.configurable(cls, module=__name__)
 
 Autoencoder = _configurable(Autoencoder)
 InverseSynthesis = _configurable(InverseSynthesis)
+MidiAutoencoder = _configurable(MidiAutoencoder)
+ZMidiAutoencoder = _configurable(ZMidiAutoencoder)
 
 
 @gin.configurable

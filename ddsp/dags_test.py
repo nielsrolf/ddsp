@@ -1,4 +1,4 @@
-# Copyright 2020 The DDSP Authors.
+# Copyright 2021 The DDSP Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,9 +23,11 @@ import tensorflow as tf
 # Make dense layers configurable for this test.
 gin.external_configurable(tf.keras.layers.Dense, 'tf.keras.layers.Dense')
 
-# Make dag_layers configurable for this test.
-gin.enter_interactive_mode()
-gin.configurable(dags.DAGLayer)
+
+@gin.configurable
+class ConfigurableDAGLayer(dags.DAGLayer):
+  """Configurable wrapper DAGLayer encapsulated for this test."""
+  pass
 
 
 class DAGLayerTest(parameterized.TestCase, tf.test.TestCase):
@@ -41,29 +43,27 @@ class DAGLayerTest(parameterized.TestCase, tf.test.TestCase):
     self.inputs = {'test_data': self.x}
     self.gin_config_kwarg_modules = f"""
     import ddsp
-    dags.run_dag.verbose = True
 
     ### Modules
-    DAGLayer.dag = [
+    ConfigurableDAGLayer.dag = [
         ('encoder', ['inputs/test_data'], ['z']),
         ('bottleneck', ['encoder/z'], ['z_bottleneck']),
         ('decoder', ['bottleneck/z_bottleneck'], ['reconstruction']),
     ]
-    DAGLayer.encoder = @encoder/Dense()
+    ConfigurableDAGLayer.encoder = @encoder/Dense()
     encoder/Dense.units = {self.x_dims}
 
-    DAGLayer.bottleneck = @bottleneck/Dense()
+    ConfigurableDAGLayer.bottleneck = @bottleneck/Dense()
     bottleneck/Dense.units = {self.z_dims}
 
-    DAGLayer.decoder = @decoder/Dense()
+    ConfigurableDAGLayer.decoder = @decoder/Dense()
     decoder/Dense.units = {self.x_dims}
     """
     self.gin_config_dag_modules = f"""
     import ddsp
-    dags.run_dag.verbose = True
 
     ### Modules
-    DAGLayer.dag = [
+    ConfigurableDAGLayer.dag = [
         (@encoder/Dense(), ['inputs/test_data'], ['z']),
         (@bottleneck/Dense(), ['encoder/z'], ['z_bottleneck']),
         (@decoder/Dense(), ['bottleneck/z_bottleneck'], ['reconstruction']),
@@ -90,8 +90,8 @@ class DAGLayerTest(parameterized.TestCase, tf.test.TestCase):
       gin.clear_config()
       gin.parse_config(gin_config)
 
-    layer = dags.DAGLayer()
-    outputs = layer(self.inputs)
+    dag_layer = ConfigurableDAGLayer()
+    outputs = dag_layer(self.inputs)
     self.assertIsInstance(outputs, dict)
 
     z = outputs['bottleneck']['z_bottleneck']
@@ -104,6 +104,9 @@ class DAGLayerTest(parameterized.TestCase, tf.test.TestCase):
     self.assertEqual(x_rec.shape, self.x.shape)
     self.assertEqual(z.shape[-1], self.z_dims)
     self.assertAllClose(x_rec, x_rec2)
+
+    # Confirm that variables are inherited by DAGLayer.
+    self.assertLen(dag_layer.trainable_variables, 6)  # 3 weights, 3 biases.
 
 if __name__ == '__main__':
   tf.test.main()
