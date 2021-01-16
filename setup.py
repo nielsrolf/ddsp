@@ -48,6 +48,7 @@ setuptools.setup(
         'pydub',
         'mir_eval',
         'numba < 0.50',  # temporary fix for librosa import
+        'note-seq',
         'numpy',
         'scipy',
         'six',
