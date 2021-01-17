@@ -19,9 +19,9 @@ class Discriminator(nn.DictLayer):
 
   def call(self, *args, **unused_kwargs):
     """Resamples all inputs to the maximal resolution and computes the score"""
-    n_timesteps = max(i.shape[1] for i in args)
+    inputs  = [preprocessing.at_least_3d(i) for i in args]
+    n_timesteps = max(i.shape[1] for i in inputs)
     inputs = [core.resample(i, n_timesteps) for i in args]
-    inputs  = [preprocessing.at_least_3d(i) for i in inputs]
     score  = self.compute_score(*inputs)
     score = tf.reduce_mean(score, axis=list(range(1, score.ndim)))
     return score
