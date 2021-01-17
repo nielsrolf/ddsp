@@ -43,6 +43,7 @@ class ZEncoder(nn.DictLayer):
   def call(self, *args, **unused_kwargs):
     """Takes in input tensors and returns a latent tensor z."""
     time_steps = int(args[-1].shape[1])
+    # TODO what is happening in the next line? test encoder that takes audio, f0 as inputs - looks like we are ignoring all but the last arguments
     inputs = args[:-1]  # Last input just used for time_steps.
     z = self.compute_z(*inputs)
     return self.expand_z(z, time_steps)
@@ -108,6 +109,8 @@ class MfccTimeDistributedRnnEncoder(ZEncoder):
     self.dense_out = tfkl.Dense(z_dims)
 
   def compute_z(self, audio):
+    if len(audio.shape) == 1:
+      audio = audio[tf.newaxis]
     mfccs = spectral_ops.compute_mfcc(
         audio,
         lo_hz=20.0,
