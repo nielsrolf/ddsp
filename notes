@@ -1,30 +1,52 @@
+# Next steps:
+- 03_gan_training.ipynb:
+  - load urmp-mono
+  - training loop
+- implement gated residual block
+- train gan
+- implement reverb module to take latent params
+
+
+
+# Later:
+- correct learning rate, optimizers for discriminator
+- timbre painting training stages will not be handled from the trainer loop. instead, trainer will be called for each stage, and we use some generic way to create a model from pretrained modules
+- add hyperparams for d_optimizer to trainer
+- add hyperparams for d_optimizer to timbrepainting.gin
+
+# Training jobs:
+
+With harmonic audio (urmp-mono) only:
+Target: find reverb module that can learn to handle arbitrary room acoustics, find best configuration for standard DDSP Autoencoder
+  - Standard DDSP Autoencoder with trainable reverb for single room
+  - Standard DDSP Autoencoder with custom reverb
+Target: evaluate extensions for timbre painting (multiple instruments, reverb)
+  - Timbre Painting on single instrument (original)
+  - Timbre painting with multiple instruments and custom reverb
+  - Evaluate Timbre painting with harmonic sine waves and random noise as input channels
+Target: DDSP GAN vs extended Timbre Painting Gan
+  - Train DDSP GAN
+Target: Find effect of adversarial loss
+  - Best model with adversarial loss only
+
+With percussion:
+  - Timbre Painting + z vector + reverb vector
+  - DDSP (GAN/AE) + z vector + reverb vector
+
+With singing:
+  - Timbre Painting + z vector + reverb vector
+  - DDSP (GAN/AE) + z vector + reverb vector
+
+
+
+
+
+
 # Questions
 - why is scale_fn included in e.g. Additive synth? why wouldn't I just scale it in the network that produces the input
 - where is this scale_fn actually used (by which applications)? Loudness is scaled by default, but isn't it computed by some fixed algorithm?
+- difference between loudness and amplitude?
 
-- why can almost all layers ignore the number of samples in the time axis?
-
-Understand this data shit
-- Do a tutorial on tfds that covers tfrecords
-- Create a dataset from a mp3 files and load a dataset into a notebook
-
-
-Implement Upsampler:
-- ConvStack
-- resample
-
-Todo:
-- timbre painting training stages will not be handled from the trainer loop. instead, trainer will be called for each stage, and we use some generic way to create a model from pretrained modules
-- add scheduler?
-    - maybe probabilistic, i.e. we randomly sample which steps to include, if there is no clean way to do it always the same 
-
-- add hyperparams for d_optimizer to trainer
-- add hyperparams for d_optimizer to timbrepainting.gin
-- pass conditioning info to d
-- implement upsampler
-- review discriminator conv layer
-
-- add as features for the upsampler a bunch of sinus waves that have frequencies according to harmonics
 
 
 # New Classes:
@@ -36,16 +58,16 @@ synths.py:
 decoders.py:
     TimbrePaintingDecoder(Decoder) <- BasicUpsampler, ParallelWaveGANUpsampler
         - Combines a BasicUpsampler and a stack of ParallelWaveGANUpsamplers
-    ParallelWaveGANUpsampler
-        - Architecture?
+    Upsampler
+        - Upsample all conditioning features including input audio to target sample rate, then use dilated conv stacks on them
 
 discriminator.py
     Discriminator
         - discriminator takes a dict with controls and the target audio
         - discriminator can decide which of these info to use by itself
+        - the evaluated audio is always called "discriminate_audio"
         - with this setup, we can model any kind of conditioning information
     ParallelWaveGANDiscriminator(Discriminator)
-        - does not use any conditioning features 
 
 
 gan.py
@@ -65,18 +87,6 @@ trainer.py:
             - control flow to execute g or d step
             - control flow to set number of upsamplers
             - control flow only depends on tf.Tensor objects
-
-    separate:
-        gan.py from autoencoder.py
-        GanTrainer from trainer
-
-    
-
-
-    step_fn: call to scheduler
-
-        - Todo: tell the generator how many upsamplers to use
-        - Todo here: get audio_real audio_gen
 
     step functions of different models:
         Autoencoder:
@@ -100,7 +110,22 @@ model.py:
 
 # Components:
 
+MonoEncoder: Audio -> (f0, loudness_db, z_timbre, z_reverb)
+  - Pretrained CREPE + MFCC-RNN 
+  - Pretrained CREPE + Dilated Gated Conv Architecture
 
+MonoDecoder: (f0, loudness_db, z_timbre, z_reverb) -> Audio
+  - NN and Harmonic+noise
+  - TP
+
+MonoDiscriminator: (f0, loudness_db, z_timbre, z_reverb, Audio) -> [0, 1]
+
+PolyEncoder: Audio -> (f0, loudness_db, z_timbre, z_reverb)^num_tracks
+
+PolyDecoder: (f0, loudness_db, z_timbre, z_reverb)^num_tracks -> Audio
+
+
+# Random old notes
 MonoAutoencoder
     MonoEncoder:
         (MFCC) => (z, loudness)
@@ -108,6 +133,7 @@ MonoAutoencoder
         f0 Encoder:
             (MFCC) => (f0)
             CREPE
+
     
     FeatureDecoder:
         (f0, z) => ('amps', 'harmonic_distribution', 'noise_magnitudes')
@@ -116,9 +142,6 @@ MonoAutoencoder
         ('f0_hz', 'amps', 'harmonic_distribution', 'noise_magnitudes') => (audio)
 
 
-GanDecoder(Decoder)
-    discriminate(audio, conditions) => [0,1]
-    discriminator_loss(real_audio, gen_audio) => loss, 
 
 
 MonoTimbreUpsamblingDecoder(GanDecoder): (f0, loudness, z) => (audio)
@@ -137,15 +160,4 @@ PolyAutoEncoder
 
     PolyDecoder: (f0, loudness, z) => audio
         stacked applications of MonoDecoder, with shared weights
-
-
-
-AdversarialLoss
-    ParallelWaveGANDiscriminator:
-        (audio) => [0,1]
-
-    .train_step(audio_real, audio_gen)
-
-
-DiscriminatorLoss:
 
