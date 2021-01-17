@@ -116,7 +116,7 @@ class Model(tf.keras.Model):
 
   @property
   def generator_variables(self):
-    discriminator_variable_names = [i.name for i in model.discriminator_variables]
+    discriminator_variable_names = [i.name for i in self.discriminator_variables]
     return [i for i in model.trainable_variables if i.name not in discriminator_variable_names]
 
   @property
