@@ -92,7 +92,7 @@ class Autoencoder(Model):
     return outputs, losses, grads
 
   @tf.function
-  def discriminator_step_function(self, batch):
+  def discriminator_step_fn(self, batch):
     """At this point, the batch already contains the generator output.
     The samples in batch['audio'] and batch['audio_synth'] correspond to each other.
     In order to prevent overfitting on a pattern that is realistic by itself but 
