@@ -120,7 +120,6 @@ class MfccTimeDistributedRnnEncoder(ZEncoder):
         mfcc_bins=30,
         overlap=self.overlap,
         pad_end=True)
-    import pdb; pdb.set_trace()
 
     # Normalize.
     z = self.z_norm(mfccs[:, :, tf.newaxis, :])[:, :, 0, :]
