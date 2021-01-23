@@ -5,7 +5,7 @@
 - implement gated residual block
 - train gan
 - implement reverb module to take latent params
-
+ hello from gpu
 
 
 # Later:
