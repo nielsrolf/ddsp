@@ -91,7 +91,7 @@ class Autoencoder(Model):
     grads = tape.gradient(losses['total_loss'], self.generator_variables)
     return outputs, losses, grads
 
-  @tf.function
+  # @tf.function
   def discriminator_step_fn(self, batch):
     """At this point, the batch already contains the generator output.
     The samples in batch['audio'] and batch['audio_synth'] correspond to each other.
@@ -100,13 +100,16 @@ class Autoencoder(Model):
     original or synthesized version of a sample.
     """
     outputs = {}
-    use_real_sample = tf.round(tf.random.uniform([batch['audio'].shape[0], 1, 1], maxval=1))
+    use_real_sample = tf.round(tf.random.uniform([batch['audio'].shape[0], 1], maxval=1))
     batch['discriminator_audio'] = use_real_sample * batch['audio'] + (1 - use_real_sample) * batch['audio_synth']
+    print('yo', batch['discriminator_audio'].shape)
+    # breakpoint()
     use_real_sample = tf.squeeze(use_real_sample)
     with tf.GradientTape() as tape:
       scores = self.discriminator(batch)['score']
       outputs['discriminator_loss'] = mean_difference(use_real_sample, scores, 'L2')
     grads = tape.gradient(outputs['discriminator_loss'], self.discriminator_variables)
+    losses = {'discriminator_loss': outputs['discriminator_loss']}
     return losses, grads
 
 
