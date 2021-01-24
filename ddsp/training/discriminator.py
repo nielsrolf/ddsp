@@ -87,6 +87,7 @@ class ParallelWaveGANDiscriminator(Discriminator):
     self.conv_layers = conv_layers
 
   def compute_score(self, *inputs):
+    print("Discriminator input:", [i.shape for i in inputs])
     x = tf.concat(inputs, axis=-1)
     for f in self.conv_layers:
       x = f(x)

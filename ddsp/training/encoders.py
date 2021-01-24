@@ -109,8 +109,6 @@ class MfccTimeDistributedRnnEncoder(ZEncoder):
     self.dense_out = tfkl.Dense(z_dims)
 
   def compute_z(self, audio):
-    if len(audio.shape) == 1:
-      audio = audio[tf.newaxis]
     mfccs = spectral_ops.compute_mfcc(
         audio,
         lo_hz=20.0,

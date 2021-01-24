@@ -1,9 +1,11 @@
 # Next steps:
 - 03_gan_training.ipynb:
-  - load urmp-mono
-  - training loop
+  - fix discriminator
+  
 - implement gated residual block
 - train gan
+- 04_hierarchical_timbre_painting
+- 05_multi_rooom_reverb
 - implement reverb module to take latent params
 
 
