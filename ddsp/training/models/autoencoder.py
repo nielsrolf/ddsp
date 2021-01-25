@@ -91,7 +91,7 @@ class Autoencoder(Model):
     grads = tape.gradient(losses['total_loss'], self.generator_variables)
     return outputs, losses, grads
 
-  # @tf.function
+  @tf.function
   def discriminator_step_fn(self, batch):
     """At this point, the batch already contains the generator output.
     The samples in batch['audio'] and batch['audio_synth'] correspond to each other.

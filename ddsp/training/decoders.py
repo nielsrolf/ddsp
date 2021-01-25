@@ -57,6 +57,7 @@ class Decoder(tfkl.Layer):
     raise NotImplementedError
 
 
+@gin.register
 class TimbrePaintingDecoder(Decoder):
   def __init__(self,
               name=None,
@@ -87,6 +88,7 @@ class TimbrePaintingDecoder(Decoder):
     return conditioning['audio_tensor']
 
 
+@gin.register
 class Upsampler(Decoder):
   """Featurewise FcStack -> Resample -> DilatedConvs -> Dense"""
 
@@ -135,7 +137,7 @@ class Upsampler(Decoder):
 
 
 
-# @gin.register
+@gin.register
 class RnnFcDecoder(nn.OutputSplitsLayer):
   """RNN and FC stacks for f0 and loudness."""
 

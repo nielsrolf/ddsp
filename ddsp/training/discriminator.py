@@ -30,7 +30,7 @@ class Discriminator(nn.DictLayer):
     raise NotImplementedError()
 
   
-class MFCCDiscriminator(tf.keras.Sequential):
+class MFCCDiscriminator(Discriminator):
   pass
 
 
