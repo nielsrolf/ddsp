@@ -44,6 +44,7 @@ class ConvStack(tf.keras.Sequential):
     ])
 
 
+@gin.register
 class ParallelWaveGANDiscriminator(Discriminator):
   """Parallel WaveGAN Discriminator module.
   

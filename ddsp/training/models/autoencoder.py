@@ -101,9 +101,8 @@ class Autoencoder(Model):
     """
     outputs = {}
     use_real_sample = tf.round(tf.random.uniform([batch['audio'].shape[0], 1], maxval=1))
+    batch = dict(**batch)
     batch['discriminator_audio'] = use_real_sample * batch['audio'] + (1 - use_real_sample) * batch['audio_synth']
-    print('yo', batch['discriminator_audio'].shape)
-    # breakpoint()
     use_real_sample = tf.squeeze(use_real_sample)
     with tf.GradientTape() as tape:
       scores = self.discriminator(batch)['score']

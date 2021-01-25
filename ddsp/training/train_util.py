@@ -218,16 +218,22 @@ def train(data_provider,
     for iteration in range(num_steps):
       step = trainer.step  # Step is not iteration if restarting a model.
 
-      # Take a step.
-      losses = trainer.train_step(dataset_iter)
-
-      # Create training loss metrics when starting/restarting training.
-      if iteration == 0:
+      if iteration == 0: # Export the graph once to tensorboard
+        tf.summary.trace_on(graph=True, profiler=True)
+        losses = trainer.train_step(dataset_iter)
+        tf.summary.trace_export(
+          name="train_step",
+          step=0,
+          profiler_outdir=save_dir)
+        # Create training loss metrics when starting/restarting training.
         loss_names = list(losses.keys())
         logging.info('Creating metrics for %s', loss_names)
         avg_losses = {name: tf.keras.metrics.Mean(name=name, dtype=tf.float32)
                       for name in loss_names}
-
+      else:
+        # Take a step.
+        losses = trainer.train_step(dataset_iter)
+        
       # Update metrics.
       for k, v in losses.items():
         avg_losses[k].update_state(v)

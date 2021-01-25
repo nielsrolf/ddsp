@@ -172,7 +172,8 @@ class Trainer(object):
       d_losses, grads = self.model.discriminator_step_fn(outputs)
       grads, _ = tf.clip_by_global_norm(grads, self.grad_clip_norm)
       self.d_optimizer.apply_gradients(zip(grads, self.model.discriminator_variables))
-      
+      losses.update(d_losses)
+
     return losses
 
 
