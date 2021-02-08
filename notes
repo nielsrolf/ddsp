@@ -1,13 +1,23 @@
 # Next steps:
-- 03_gan_training.ipynb:
-  - fix discriminator
+- TIMBRE INTERPOLATION
+  Target: specify a model and two monophonic wav files
+  Preprocess samples, collect dataset statistics
+  copy stuff from timbre transfer notebook
   
+- move timbre interpolation notebook to colab
+- add sript to download s3
+
+
+- test gan:
+  - train discriminator only to see if it works
+  - test that decoder changes when trained as gan
+
+
 - implement gated residual block
-- train gan
 - 04_hierarchical_timbre_painting
-- 05_multi_rooom_reverb
+- 05_multi_room_reverb
 - implement reverb module to take latent params
- hello from gpu
+
 
 
 # Later:
@@ -49,6 +59,11 @@ With singing:
 - where is this scale_fn actually used (by which applications)? Loudness is scaled by default, but isn't it computed by some fixed algorithm?
 - difference between loudness and amplitude?
 
+# Random ideas
+- learn encoding of voice vs lyrics:
+  voice component is constant for a training sample over time
+  lyrics is not averaged over time (i.e. like it is now)
+  there is some cost to using the lyrics encoder (L2 loss + noise)
 
 
 # New Classes:
