@@ -16,11 +16,11 @@ Autoencoder.preprocessor = @preprocessing.F0LoudnessPreprocessor()
 F0LoudnessPreprocessor.time_steps = 1000
 
 # Encoder
-Autoencoder.encoder = @encoders.MfccTimeDistributedRnnEncoder()
-MfccTimeDistributedRnnEncoder.rnn_channels = 512
-MfccTimeDistributedRnnEncoder.rnn_type = 'gru'
-MfccTimeDistributedRnnEncoder.z_dims = 16
-MfccTimeDistributedRnnEncoder.z_time_steps = 125
+Autoencoder.encoder = @encoders.MfccTimeConstantRnnEncoder()
+MfccTimeConstantRnnEncoder.rnn_channels = 512
+MfccTimeConstantRnnEncoder.rnn_type = 'gru'
+MfccTimeConstantRnnEncoder.z_dims = 16
+MfccTimeConstantRnnEncoder.z_time_steps = 125
 
 # Decoder
 Autoencoder.decoder = @decoders.RnnFcDecoder()
@@ -33,13 +33,10 @@ RnnFcDecoder.output_splits = (('amps', 1),
                               ('harmonic_distribution', 100),
                               ('noise_magnitudes', 65))
 
-# Discriminator
-Autoencoder.discriminator = @discriminator.ParallelWaveGANDiscriminator()
-ParallelWaveGANDiscriminator.input_keys = ('discriminator_audio', 'f0_hz', 'loudness_db')
-
-
 # Losses
-Autoencoder.losses = []
+Autoencoder.losses = [
+    @losses.SpectralLoss(),
+]
 SpectralLoss.loss_type = 'L1'
 SpectralLoss.mag_weight = 1.0
 SpectralLoss.logmag_weight = 1.0
