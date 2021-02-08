@@ -170,8 +170,6 @@ class RnnFcDecoder(nn.OutputSplitsLayer):
   def compute_output(self, *inputs):
     # Initial processing.
     inputs = [stack(x) for stack, x in zip(self.input_stacks, inputs)]
-    print("RnnFcDecoder:")
-    print({k: x.shape for k, x in zip(self.input_keys, inputs)})
 
     # Run an RNN over the latents.
     x = tf.concat(inputs, axis=-1)
