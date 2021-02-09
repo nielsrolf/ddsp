@@ -1,3 +1,9 @@
+letzter gedanke: discriminator trainieren ohne g zu updaten sollte eigentlich funktionieren (tut es das?)
+
+
+
+
+
 # Next steps:
 - TIMBRE INTERPOLATION
   Target: specify a model and two monophonic wav files

@@ -39,7 +39,7 @@ class ConvStack(tf.keras.Sequential):
     super().__init__([
       ZeroPadding1D(padding),
       tfa.layers.WeightNormalization(
-        Conv1D(conv_channels, kernel_size=kernel_size, padding='valid', dilation_rate=dilation_rate)),
+        Conv1D(conv_channels, kernel_size=kernel_size, padding='valid', dilation_rate=dilation_rate, kernel_initializer=tf.keras.initializers.HeNormal())),
       getattr(tf.keras.layers, nonlinear_activation)(**nonlinear_activation_params)
     ])
 

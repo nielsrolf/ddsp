@@ -107,8 +107,14 @@ class Autoencoder(Model):
     with tf.GradientTape() as tape:
       scores = self.discriminator(batch)['score']
       outputs['discriminator_loss'] = mean_difference(use_real_sample, scores, 'L2')
+    mean_pred_real = tf.reduce_sum(scores * use_real_sample) / tf.reduce_sum(use_real_sample)
+    mean_pred_synth = tf.reduce_sum(scores * (1 - use_real_sample)) / tf.reduce_sum(1 - use_real_sample)
     grads = tape.gradient(outputs['discriminator_loss'], self.discriminator_variables)
-    losses = {'discriminator_loss': outputs['discriminator_loss']}
+    losses = {
+      'discriminator_loss': outputs['discriminator_loss'],
+      'mean_pred_real': mean_pred_real,
+      'mean_pred_synth': mean_pred_synth}
+
     return losses, grads
 
 
