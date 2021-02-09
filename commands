@@ -1,3 +1,4 @@
+# Test command
 ddsp_run \
   --mode=train \
   --alsologtostderr \
@@ -6,11 +7,12 @@ ddsp_run \
   --gin_file=datasets/tfrecord.gin \
   --gin_param="TFRecordProvider.file_pattern='$URMP_MONO'" \
   --gin_param="batch_size=2" \
-  --gin_param="train_util.train.num_steps=20" \
-  --gin_param="train_util.train.steps_per_save=20" \
+  --gin_param="train_util.train.num_steps=120" \
+  --gin_param="train_util.train.steps_per_save=5" \
   --gin_param="train_util.train.steps_per_summary=1" \
   --gin_param="trainers.Trainer.checkpoints_to_keep=10" 
 
+# Pure GAN
 ddsp_run \
   --mode=train \
   --alsologtostderr \
@@ -22,4 +24,47 @@ ddsp_run \
   --gin_param="train_util.train.num_steps=20" \
   --gin_param="train_util.train.steps_per_save=20" \
   --gin_param="train_util.train.steps_per_summary=1" \
+  --gin_param="trainers.Trainer.checkpoints_to_keep=10" 
+
+# Mixed architecture
+ddsp_run \
+  --mode=train \
+  --alsologtostderr \
+  --save_dir="$RESULTS_DIR/ddsp_gan_ae" \
+  --gin_file=models/ddsp_gan_ae.gin \
+  --gin_file=datasets/tfrecord.gin \
+  --gin_param="TFRecordProvider.file_pattern='$URMP_MONO'" \
+  --gin_param="batch_size=16" \
+  --gin_param="train_util.train.num_steps=12000" \
+  --gin_param="train_util.train.steps_per_save=300" \
+  --gin_param="train_util.train.steps_per_summary=100" \
+  --gin_param="trainers.Trainer.checkpoints_to_keep=10" 
+
+# Standard DDSP
+ddsp_run \
+  --mode=train \
+  --alsologtostderr \
+  --save_dir="$RESULTS_DIR/ddsp_ae_baseline" \
+  --gin_file=models/ae.gin \
+  --gin_file=datasets/tfrecord.gin \
+  --gin_param="TFRecordProvider.file_pattern='$URMP_MONO'" \
+  --gin_param="batch_size=16" \
+  --gin_param="train_util.train.num_steps=12000" \
+  --gin_param="train_util.train.steps_per_save=300" \
+  --gin_param="train_util.train.steps_per_summary=100" \
+  --gin_param="trainers.Trainer.checkpoints_to_keep=10" 
+
+
+# Mixed architecture with constant z
+ddsp_run \
+  --mode=train \
+  --alsologtostderr \
+  --save_dir="$RESULTS_DIR/ddsp_gan_ae" \
+  --gin_file=models/ddsp_gan_constant_z.gin \
+  --gin_file=datasets/tfrecord.gin \
+  --gin_param="TFRecordProvider.file_pattern='$URMP_MONO'" \
+  --gin_param="batch_size=16" \
+  --gin_param="train_util.train.num_steps=12000" \
+  --gin_param="train_util.train.steps_per_save=300" \
+  --gin_param="train_util.train.steps_per_summary=100" \
   --gin_param="trainers.Trainer.checkpoints_to_keep=10" 
