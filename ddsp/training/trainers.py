@@ -166,7 +166,7 @@ class Trainer(object):
     """Per-Replica training step."""
     outputs, losses, grads = self.model.step_fn(batch)
     grads, _ = tf.clip_by_global_norm(grads, self.grad_clip_norm)
-    # self.optimizer.apply_gradients(zip(grads, self.model.generator_variables))
+    self.optimizer.apply_gradients(zip(grads, self.model.generator_variables))
 
     if self.model.is_gan:
       d_losses, grads = self.model.discriminator_step_fn(outputs)

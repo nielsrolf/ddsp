@@ -24,6 +24,8 @@ class Discriminator(nn.DictLayer):
     inputs = [core.resample(i, n_timesteps) for i in inputs]
     score  = self.compute_score(*inputs)
     score = tf.reduce_mean(score, axis=list(range(1, len(score.shape))))
+    # score = tf.math.sigmoid(tf.reduce_mean(score, axis=list(range(1, len(score.shape)))))
+  
     return score
   
   def compute_score(self, *args):
@@ -39,7 +41,7 @@ class ConvStack(tf.keras.Sequential):
     super().__init__([
       ZeroPadding1D(padding),
       tfa.layers.WeightNormalization(
-        Conv1D(conv_channels, kernel_size=kernel_size, padding='valid', dilation_rate=dilation_rate, kernel_initializer=tf.keras.initializers.HeNormal())),
+        Conv1D(conv_channels, kernel_size=kernel_size, padding='valid', dilation_rate=dilation_rate)), #  , kernel_initializer=tf.keras.initializers.HeNormal()
       getattr(tf.keras.layers, nonlinear_activation)(**nonlinear_activation_params)
     ])
 
@@ -91,6 +93,7 @@ class ParallelWaveGANDiscriminator(Discriminator):
     x = tf.concat(inputs, axis=-1)
     for f in self.conv_layers:
       x = f(x)
-    return x
+    
+    return x / 10
 
   
