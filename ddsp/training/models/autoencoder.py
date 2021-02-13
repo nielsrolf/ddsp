@@ -17,7 +17,6 @@
 
 import ddsp
 from ddsp.training.models.model import Model
-from ddsp.losses import mean_difference
 import tensorflow as tf
 
 
@@ -62,7 +61,7 @@ class Autoencoder(Model):
       return
     batch = {k if k != 'audio_synth' else 'discriminator_audio': v for k, v in outputs.items()}
     scores = self.discriminator(batch)['score']
-    self._losses_dict['adversarial_loss'] = mean_difference(tf.ones_like(scores), scores, 'L2')
+    self._losses_dict['adversarial_loss'] = tf.reduce_mean(tf.keras.losses.mean_squared_error(tf.ones_like(scores), scores, 'L2'))
 
   def call(self, features, training=True):
     """Run the core of the network, get predictions and loss."""
@@ -91,31 +90,59 @@ class Autoencoder(Model):
     grads = tape.gradient(losses['total_loss'], self.generator_variables)
     return outputs, losses, grads
 
-  @tf.function
-  def discriminator_step_fn(self, batch):
-    """At this point, the batch already contains the generator output.
-    The samples in batch['audio'] and batch['audio_synth'] correspond to each other.
-    In order to prevent overfitting on a pattern that is realistic by itself but 
-    different from the original sample, it is randomly sampled wether to use the 
-    original or synthesized version of a sample.
-    """
-    outputs = {}
-    use_real_sample = tf.round(tf.random.uniform([batch['audio'].shape[0], 1], maxval=1))
-    batch = dict(**batch)
-    batch['discriminator_audio'] = use_real_sample * batch['audio'] + (1 - use_real_sample) * batch['audio_synth']
-    use_real_sample = tf.squeeze(use_real_sample)
-    with tf.GradientTape() as tape:
-      scores = self.discriminator(batch)['score']
-      outputs['discriminator_loss'] = mean_difference(use_real_sample, scores, 'L2')
-    mean_pred_real = tf.reduce_sum(scores * use_real_sample) / tf.reduce_sum(use_real_sample)
-    mean_pred_synth = tf.reduce_sum(scores * (1 - use_real_sample)) / tf.reduce_sum(1 - use_real_sample)
-    grads = tape.gradient(outputs['discriminator_loss'], self.discriminator_variables)
-    losses = {
-      'discriminator_loss': outputs['discriminator_loss'],
-      'mean_pred_real': mean_pred_real,
-      'mean_pred_synth': mean_pred_synth}
+  # @tf.function
+  # def discriminator_step_fn(self, batch):
+  #   """At this point, the batch already contains the generator output.
+  #   The samples in batch['audio'] and batch['audio_synth'] correspond to each other.
+  #   In order to prevent overfitting on a pattern that is realistic by itself but 
+  #   different from the original sample, it is randomly sampled wether to use the 
+  #   original or synthesized version of a sample.
+  #   """
+  #   outputs = {}
+  #   use_real_sample = tf.round(tf.random.uniform([batch['audio'].shape[0], 1], maxval=1))
+  #   batch = dict(**batch)
+  #   batch['discriminator_audio'] = use_real_sample * batch['audio'] + (1 - use_real_sample) * batch['audio_synth']
+  #   use_real_sample = tf.squeeze(use_real_sample)
+  #   with tf.GradientTape() as tape:
+  #     scores = self.discriminator(batch)['score']
+  #     outputs['discriminator_loss'] = mean_difference(use_real_sample, scores, 'L2')
+  #   mean_pred_real = tf.reduce_sum(scores * use_real_sample) / tf.reduce_sum(use_real_sample)
+  #   mean_pred_synth = tf.reduce_sum(scores * (1 - use_real_sample)) / tf.reduce_sum(1 - use_real_sample)
+  #   grads = tape.gradient(outputs['discriminator_loss'], self.discriminator_variables)
+  #   losses = {
+  #     'discriminator_loss': outputs['discriminator_loss'],
+  #     'mean_pred_real': mean_pred_real,
+  #     'mean_pred_synth': mean_pred_synth}
 
-    return losses, grads
+  #   return losses, grads
+  def discriminator_step_fn(self, batch):
+        """At this point, the batch already contains the generator output.
+        The samples in batch['audio'] and batch['audio_synth'] correspond to each other.
+        In order to prevent overfitting on a pattern that is realistic by itself but 
+        different from the original sample, it is randomly sampled wether to use the 
+        original or synthesized version of a sample.
+        """
+        losses = {}
+        
+        real_batch = dict(**batch)
+        real_batch['discriminator_audio'] = real_batch['audio']
+        fake_batch = dict(**batch)
+        fake_batch['discriminator_audio'] = fake_batch['audio_synth']
+        
+        with tf.GradientTape() as tape:
+            scores_real = self.discriminator(real_batch)['score']
+            scores_fake = self.discriminator(fake_batch)['score']
+            d = tf.reduce_mean(tf.abs(real_batch['discriminator_audio']) -  fake_batch['discriminator_audio'])
+            losses['discriminator_loss_total'] = tf.reduce_mean(scores_real) - tf.reduce_mean(scores_fake)
+            # losses['discriminator_loss_real'] = tf.reduce_mean(tf.keras.losses.mean_squared_error(tf.ones_like(scores_real), scores_real))
+            # losses['discriminator_loss_fake'] = tf.reduce_mean(tf.keras.losses.mean_squared_error(tf.zeros_like(scores_fake), scores_fake))
+            # losses['discriminator_loss_total'] = losses['discriminator_loss_real'] + losses['discriminator_loss_fake']
+            losses['discriminator_pred_real'] = tf.reduce_mean(scores_real)
+            losses['discriminator_pred_fake'] = tf.reduce_mean(scores_fake)
+            losses['difference_input'] = d
+            grads = tape.gradient(losses['discriminator_loss_total'], self.discriminator_variables)
+        
+        return losses, grads
 
 
 
