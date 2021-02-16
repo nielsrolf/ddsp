@@ -20,7 +20,6 @@ from ddsp.training import nn
 from ddsp import core
 import gin
 import tensorflow.compat.v2 as tf
-from ddsp.synths import BasicUpsampler
 
 tfkl = tf.keras.layers
 
