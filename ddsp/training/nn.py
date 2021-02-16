@@ -460,9 +460,7 @@ class DilatedResidualConvLayer(tfkl.Layer):
 
   def __init__(self,
               kernel_size=3,
-              residual_channels=64,
-              gate_channels=128,
-              aux_channels=80,
+              residual_channels=32,
               dilation_rate=1,
               use_bias=True,
               **kwargs):
@@ -473,17 +471,12 @@ class DilatedResidualConvLayer(tfkl.Layer):
                             padding='same', dilation_rate=dilation_rate, use_bias=use_bias)
 
     # local conditioning
-    if aux_channels > 0:
-        self.conv1x1_aux = tfkl.Conv1D(residual_channels, use_bias=False, kernel_size=1, padding='same',
+    self.conv1x1_aux = tfkl.Conv1D(residual_channels, use_bias=False, kernel_size=1, padding='same',
                                         dilation_rate=1)
-    else:
-        self.conv1x1_aux = None
 
-    # conv output is split into two groups
-    gate_out_channels = gate_channels // 2
-    self.conv1x1_out = tfkl.Conv1D(gate_out_channels, use_bias=use_bias,
+    self.conv1x1_out = tfkl.Conv1D(residual_channels, use_bias=use_bias,
                                 kernel_size=1, padding='same', dilation_rate=1)
-    self.conv1x1_skip = tfkl.Conv1D(gate_out_channels, use_bias=use_bias,
+    self.conv1x1_skip = tfkl.Conv1D(residual_channels, use_bias=use_bias,
                                 kernel_size=1, padding='same', dilation_rate=1)
 
   def call(self, x, c):
@@ -498,11 +491,7 @@ class DilatedResidualConvLayer(tfkl.Layer):
     residual = x
     x = self.conv(x)
     # local conditioning
-    if c is not None:
-      assert self.conv1x1_aux is not None
-      c = self.conv1x1_aux(c)
-    else:
-      c = 0
+    c = self.conv1x1_aux(c)
     x =  x + c
     # split channels into two part for gated activation
     xa, xb = tf.split(x, 2, axis=-1)
