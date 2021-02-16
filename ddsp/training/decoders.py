@@ -58,83 +58,73 @@ class Decoder(tfkl.Layer):
 
 
 @gin.register
-class TimbrePaintingDecoder(Decoder):
+class UntitledGAN(tfkl.Layer):
   def __init__(self,
               name=None,
-              input_keys=('amplitudes', 'f0_hz', 'z'),
-              sample_rates=[2000, 4000, 8000, 16000],
-              n_total=64000):
-    super().__init__(output_splits=(('audio_tensor', 1),), name=name)
-    n_initial = int(sample_rates[0]/sample_rates[-1]*n_total)
-    self.basic_upsampler = BasicUpsampler(n_samples=n_initial,sample_rate=sample_rates[0])
-    self.upsamplers = []
-    for sample_rate in sample_rates:
-      upsampler = Upsampler(
-        int(sample_rate/sample_rates[-1]*n_total),
-        input_keys=input_keys+('audio_tensor',),
-        name=f"upsampler{sample_rate}"
-      )
-      self.upsamplers += [upsampler]
-
-  def decode(self, conditioning):
-    """Takes in conditioning dictionary, returns dictionary of signals."""
-    conditioning = dict(conditioning)
-    audio = self.basic_upsampler(conditioning['amplitudes'], conditioning['f0_hz'])
-    conditioning['audio_tensor'] = tf.expand_dims(audio, 2)
-
-    for upsampler in self.upsamplers:
-      conditioning['audio_tensor'] = upsampler.decode(conditioning)
-
-    return conditioning['audio_tensor']
-
-
-@gin.register
-class Upsampler(Decoder):
-  """Featurewise FcStack -> Resample -> DilatedConvs -> Dense"""
-
-  def __init__(self,
-         n_timesteps,
-         conv_layers=10,
-         kernel=3,
-         ch=512,
-         layers_per_input_stack=3,
-         input_keys=('ld_scaled', 'f0_scaled', 'z', 'audio'),
-         name=None):
-    super().__init__(output_splits=(('audio', 1),), name=name)
-    assert 'audio_tensor' in input_keys, f"Upsampler requires one input to be named audio. Got input_keys: {str(input_keys)}"
+              input_keys=('ld_scaled', 'f0_hz', 'z'),
+              sample_rate=16000,
+              n_total=64000,
+              n_harmonics=40,
+              ch=64,
+              kernel=3,
+              conv_layers=10,
+              layers_per_input_stack=2):
+    super().__init__(name=name)
+    """
+    - generate {
+        audios with f0, 2*f0, 3*f0, ..., self.n_hamronics*f0
+        fc(noise)
+        fc(loudness)
+        [fc(z), ...]
+      } as first feature representation
+      run dilated conv net on that
+    - 
+    """
+    self.input_keys = input_keys
+    self.sample_rate = sample_rate
+    self.n_total = n_total
+    self.n_harmonics = n_harmonics
 
     def fc_stack():
-      return nn.FcStack(ch, layers_per_input_stack)
+      return nn.FcStack(ch, layers_per_input_stack-1)
 
     def conv_stack(dilation_rate):
-      return nn.DilatedConvLayer(ch, kernel, dilation_rate)
-
-    self.n_timesteps = n_timesteps
-    self.input_keys = [k for k in input_keys if k != 'audio_tensor']
+      return nn.DilatedResidualConvLayer(kernel_size=kernel, residual_channels=ch,
+                                          dilation_rate=dilation_rate, use_bias=True)
 
     # Layers.
-    self.input_stacks = [fc_stack() for k in input_keys if k != 'audio_tensor']
+    self.input_stacks = [fc_stack() for k in input_keys]
+    self.first_conv = tfkl.Conv1D(ch, kernel_size=1, use_bias=True)
     self.conv_layers = [conv_stack(2**i) for i in range(1, conv_layers + 1)]
     self.dense_out = tfkl.Dense(1)
 
-  def decode(self, conditioning):
-    # Initial processing.
-    audio = conditioning.pop("audio_tensor")
-    audio = core.resample(audio, self.n_timesteps)
+  def call(self, conditioning):
+    batch_size = conditioning['f0_hz'].shape[0]
+    noise = tf.random.normal([batch_size, self.n_total, 1])
 
+    f0_hz = core.resample(conditioning['f0_hz'], self.n_total)
+    frequency_envelopes = core.get_harmonic_frequencies(f0_hz, self.n_harmonics)
+    audios = core.oscillator_bank(frequency_envelopes=frequency_envelopes,
+                    amplitude_envelopes=tf.ones_like(frequency_envelopes),
+                    sample_rate=self.sample_rate,
+                    sum_sinusoids=False)
+    
     inputs = [conditioning[k] for k in self.input_keys]
     inputs = [stack(x) for stack, x in zip(self.input_stacks, inputs)]
 
     # Resample all inputs to the target sample rate
-    inputs = [core.resample(x, self.n_timesteps) for x in inputs]
+    inputs = [core.resample(x, self.n_total) for x in inputs]
+    
+    c = tf.concat(inputs + [audios, noise], axis=-1)
     # Conv layers
-    # TODO copy original implementation or do a correct resnet
-    x = tf.concat(inputs, axis=-1)
-    for conv_layer in self.conv_layers:
-      x = conv_layer(x)
-    # Final processing.
-    return self.dense_out(x) + audio
+    x = self.first_conv(c)
+    skips = 0
+    for f in self.conv_layers:
+      x, h = f(x, c)
+      skips += h
+    skips *= tf.sqrt(1.0 / len(self.conv_layers))
 
+    return {'audio_tensor': self.dense_out(skips)}
 
 
 @gin.register
