@@ -132,57 +132,6 @@ class Harmonic(processors.Processor):
     return signal
 
 
-class BasicUpsampler(processors.Processor):
-  """Initial Upsampler in timbre painting, does a harmonic synthesis without any harmonics"""
-  def __init__(self,
-               n_samples=64000,
-               sample_rate=16000,
-               scale_fn=core.exp_sigmoid,
-               name='basic_upsampler'):
-    super().__init__(name=name)
-    self.n_samples = n_samples
-    self.sample_rate = sample_rate
-    self.scale_fn = scale_fn
-
-  def get_controls(self,
-                   amplitudes,
-                   f0_hz):
-    """Convert network output tensors into a dictionary of synthesizer controls.
-
-    Args:
-      amplitudes: 3-D Tensor of synthesizer controls, of shape
-        [batch, time, 1].
-      f0_hz: Fundamental frequencies in hertz. Shape [batch, time, 1].
-
-    Returns:
-      controls: Dictionary of tensors of synthesizer controls.
-    """
-    # Scale the amplitudes.
-    if self.scale_fn is not None:
-      amplitudes = self.scale_fn(amplitudes)
-
-    return {'amplitudes': amplitudes,
-            'f0_hz': f0_hz}
-
-  def get_signal(self, amplitudes, f0_hz):
-    """Synthesize audio that is a single scaled sinus wave.
-
-    Args:
-      amplitudes: Amplitude tensor of shape [batch, n_frames, 1]. Expects
-        float32 that is strictly positive.
-      f0_hz: The fundamental frequency in Hertz. Tensor of shape [batch,
-        n_frames, 1].
-
-    Returns:
-      signal: A tensor of harmonic waves of shape [batch, n_samples].
-    """
-    signal = core.harmonic_synthesis(
-        frequencies=f0_hz,
-        amplitudes=amplitudes,
-        n_samples=self.n_samples,
-        sample_rate=self.sample_rate)
-    return signal
-
 
 @gin.register
 class FilteredNoise(processors.Processor):

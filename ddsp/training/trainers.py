@@ -31,7 +31,8 @@ class Trainer(object):
                model,
                strategy,
                checkpoints_to_keep=100,
-               learning_rate=0.001,
+               learning_rate_g=0.001,
+               learning_rate_d=0.0001,
                lr_decay_steps=10000,
                lr_decay_rate=0.98,
                grad_clip_norm=3.0,
@@ -57,13 +58,13 @@ class Trainer(object):
 
     # Create an optimizer.
     lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-        initial_learning_rate=learning_rate,
+        initial_learning_rate=learning_rate_g,
         decay_steps=lr_decay_steps,
         decay_rate=lr_decay_rate)
 
     if self.model.is_gan:
       d_lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-          initial_learning_rate=learning_rate,
+          initial_learning_rate=learning_rate_d,
           decay_steps=lr_decay_steps,
           decay_rate=lr_decay_rate) # TODO correct learning schedule + optimizer?
 
@@ -175,5 +176,3 @@ class Trainer(object):
       losses.update(d_losses)
 
     return losses
-
-

@@ -455,17 +455,65 @@ class Normalize(tfkl.Layer):
     return inv_ensure_4d(x, n_dims)
 
 
-class DilatedConvLayer(tf.keras.Sequential):
+class DilatedResidualConvLayer(tfkl.Layer):
   """LayerNorm -> ReLU -> Conv layer."""
 
-  def __init__(self, ch, k, dilation_rate, **kwargs):
-    """Downsample frequency by stride."""
-    layers = [
-        tfkl.LayerNormalization(),
-        tfkl.Activation(tf.nn.relu),
-        tfkl.Conv1D(ch, k, dilation_rate=dilation_rate, padding='same'),
-    ]
-    super().__init__(layers, **kwargs)
+  def __init__(self,
+              kernel_size=3,
+              residual_channels=64,
+              gate_channels=128,
+              aux_channels=80,
+              dilation_rate=1,
+              use_bias=True,
+              **kwargs):
+    super().__init__(**kwargs)
+    assert kernel_size % 2 == 1, f"The kernel size must be an odd number, but got {kernel_size}"
+    # self.padding = tfkl.ZeroPadding1D((kernel_size - 1) // 2 * dilation_rate)
+    self.conv = tfkl.Conv1D(residual_channels, kernel_size,
+                            padding='same', dilation_rate=dilation_rate, use_bias=use_bias)
+
+    # local conditioning
+    if aux_channels > 0:
+        self.conv1x1_aux = tfkl.Conv1D(residual_channels, use_bias=False, kernel_size=1, padding='same',
+                                        dilation_rate=1)
+    else:
+        self.conv1x1_aux = None
+
+    # conv output is split into two groups
+    gate_out_channels = gate_channels // 2
+    self.conv1x1_out = tfkl.Conv1D(gate_out_channels, use_bias=use_bias,
+                                kernel_size=1, padding='same', dilation_rate=1)
+    self.conv1x1_skip = tfkl.Conv1D(gate_out_channels, use_bias=use_bias,
+                                kernel_size=1, padding='same', dilation_rate=1)
+
+  def call(self, x, c):
+    """Calculate forward propagation.
+    Args:
+        x (Tensor): Input tensor (B, T, residual_channels).
+        c (Tensor): Local conditioning auxiliary tensor (B, T, aux_channels).
+    Returns:
+        Tensor: Output tensor for residual connection (B, T, residual_channels).
+        Tensor: Output tensor for skip connection (B, T, skip_channels).
+    """
+    residual = x
+    x = self.conv(x)
+    # local conditioning
+    if c is not None:
+      assert self.conv1x1_aux is not None
+      c = self.conv1x1_aux(c)
+    else:
+      c = 0
+    x =  x + c
+    # split channels into two part for gated activation
+    xa, xb = tf.split(x, 2, axis=-1)
+    x = tf.math.tanh(xa) * tf.math.sigmoid(xb)
+    # for skip connection
+    s = self.conv1x1_skip(x)
+    # for residual connection
+    x = (self.conv1x1_out(x) + residual) * tf.math.sqrt(0.5)
+    return x, s
+
+
 
 
 # ------------------ ResNet ----------------------------------------------------
