@@ -19,6 +19,8 @@ from ddsp.training.models.autoencoder import Autoencoder
 from ddsp.training.models.inverse_synthesis import InverseSynthesis
 from ddsp.training.models.midi_autoencoder import MidiAutoencoder
 from ddsp.training.models.midi_autoencoder import ZMidiAutoencoder
+from ddsp.training.models.wgan import WGAN
+from ddsp.training.models.lsgan import LSGAN
 from ddsp.training.models.model import Model
 import gin
 
@@ -29,6 +31,8 @@ Autoencoder = _configurable(Autoencoder)
 InverseSynthesis = _configurable(InverseSynthesis)
 MidiAutoencoder = _configurable(MidiAutoencoder)
 ZMidiAutoencoder = _configurable(ZMidiAutoencoder)
+WGAN = _configurable(WGAN)
+LSGAN = _configurable(LSGAN)
 
 
 @gin.configurable
@@ -42,4 +46,12 @@ def get_model(model=gin.REQUIRED):
   Returns:
     The 'global' model specifieed in the gin config.
   """
-  return model
+  if model == "combined":
+    return get_combined_model()
+  else:
+    return model
+
+
+@gin.configurable
+def get_combined_model(model_cls, preprocessor, encoder, decoder, processor_group, losses, discriminator):
+  return model_cls(preprocessor=preprocessor, encoder=encoder, decoder=decoder, processor_group=processor_group, losses=losses, discriminator=discriminator)

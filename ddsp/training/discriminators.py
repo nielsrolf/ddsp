@@ -31,7 +31,8 @@ class Discriminator(nn.DictLayer):
   def compute_score(self, *args):
     raise NotImplementedError()
 
-  
+
+@gin.register  
 class MfccTimeConstantRnnDiscriminator(Discriminator):
   """Use MFCCs as latent variables, distribute across timesteps."""
 
@@ -181,8 +182,11 @@ class ParallelWaveGANDiscriminator(nn.DictLayer):
 
   def compute_score(self, *inputs):
     x = tf.concat(inputs, axis=-1)
+    print("d:", x.shape)
     for f in self.conv_layers:
+      print("d:", x.shape)
       x = f(x)
+    print("d:", x.shape)
     return x / 10 
 
   

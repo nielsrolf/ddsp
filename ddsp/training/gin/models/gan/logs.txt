@@ -1,0 +1,85 @@
+2021-02-22 00:08:39.023335: I tensorflow/stream_executor/platform/default/dso_loader.cc:48] Successfully opened dynamic library libcudart.so.10.1
+/mnt/antares_raid/home/nielsrolf/miniconda3/envs/gpu_deep_net/lib/python3.8/site-packages/pydub/utils.py:170: RuntimeWarning: Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work
+  warn("Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work", RuntimeWarning)
+I0222 00:08:47.233265 139726764861248 ddsp_run.py:176] Restore Dir: /mnt/raid/ni/niels/s3/models/exp01_base_lsgan_conv_decoder_conv_discriminator
+I0222 00:08:47.233862 139726764861248 ddsp_run.py:177] Save Dir: /mnt/raid/ni/niels/s3/models/exp01_base_lsgan_conv_decoder_conv_discriminator
+I0222 00:08:47.234205 139726764861248 resource_reader.py:50] system_path_file_exists:optimization/base.gin
+E0222 00:08:47.234709 139726764861248 resource_reader.py:55] Path not found: optimization/base.gin
+I0222 00:08:47.240075 139726764861248 resource_reader.py:50] system_path_file_exists:eval/basic.gin
+E0222 00:08:47.240588 139726764861248 resource_reader.py:55] Path not found: eval/basic.gin
+I0222 00:08:47.242928 139726764861248 ddsp_run.py:147] Using operative config: /mnt/raid/ni/niels/s3/models/exp01_base_lsgan_conv_decoder_conv_discriminator/operative_config-0.gin
+I0222 00:08:47.253136 139726764861248 resource_reader.py:50] system_path_file_exists:datasets/tfrecord.gin
+E0222 00:08:47.253425 139726764861248 resource_reader.py:55] Path not found: datasets/tfrecord.gin
+I0222 00:08:47.253885 139726764861248 resource_reader.py:50] system_path_file_exists:datasets/base.gin
+E0222 00:08:47.254167 139726764861248 resource_reader.py:55] Path not found: datasets/base.gin
+I0222 00:08:47.256156 139726764861248 resource_reader.py:50] system_path_file_exists:models/gan/base.gin
+E0222 00:08:47.256462 139726764861248 resource_reader.py:55] Path not found: models/gan/base.gin
+I0222 00:08:47.258931 139726764861248 resource_reader.py:50] system_path_file_exists:models/gan/lsgan.gin
+E0222 00:08:47.259234 139726764861248 resource_reader.py:55] Path not found: models/gan/lsgan.gin
+I0222 00:08:47.259899 139726764861248 resource_reader.py:50] system_path_file_exists:models/gan/conv_decoder.gin
+E0222 00:08:47.260198 139726764861248 resource_reader.py:55] Path not found: models/gan/conv_decoder.gin
+I0222 00:08:47.261878 139726764861248 resource_reader.py:50] system_path_file_exists:models/gan/conv_discriminator.gin
+E0222 00:08:47.262184 139726764861248 resource_reader.py:55] Path not found: models/gan/conv_discriminator.gin
+I0222 00:08:47.307516 139726764861248 train_util.py:78] Defaulting to MirroredStrategy
+2021-02-22 00:08:47.309134: I tensorflow/stream_executor/platform/default/dso_loader.cc:48] Successfully opened dynamic library libcuda.so.1
+2021-02-22 00:08:49.002304: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1716] Found device 0 with properties: 
+pciBusID: 0000:03:00.0 name: GeForce RTX 2080 Ti computeCapability: 7.5
+coreClock: 1.56GHz coreCount: 68 deviceMemorySize: 10.76GiB deviceMemoryBandwidth: 573.69GiB/s
+2021-02-22 00:08:49.003174: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1716] Found device 1 with properties: 
+pciBusID: 0000:81:00.0 name: TITAN V computeCapability: 7.0
+coreClock: 1.455GHz coreCount: 80 deviceMemorySize: 11.78GiB deviceMemoryBandwidth: 607.97GiB/s
+2021-02-22 00:08:49.003204: I tensorflow/stream_executor/platform/default/dso_loader.cc:48] Successfully opened dynamic library libcudart.so.10.1
+2021-02-22 00:08:49.006546: I tensorflow/stream_executor/platform/default/dso_loader.cc:48] Successfully opened dynamic library libcublas.so.10
+2021-02-22 00:08:49.008909: I tensorflow/stream_executor/platform/default/dso_loader.cc:48] Successfully opened dynamic library libcufft.so.10
+2021-02-22 00:08:49.009709: I tensorflow/stream_executor/platform/default/dso_loader.cc:48] Successfully opened dynamic library libcurand.so.10
+2021-02-22 00:08:49.012406: I tensorflow/stream_executor/platform/default/dso_loader.cc:48] Successfully opened dynamic library libcusolver.so.10
+2021-02-22 00:08:49.014126: I tensorflow/stream_executor/platform/default/dso_loader.cc:48] Successfully opened dynamic library libcusparse.so.10
+2021-02-22 00:08:49.018996: I tensorflow/stream_executor/platform/default/dso_loader.cc:48] Successfully opened dynamic library libcudnn.so.7
+2021-02-22 00:08:49.022342: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1858] Adding visible gpu devices: 0, 1
+2021-02-22 00:08:49.022713: I tensorflow/core/platform/cpu_feature_guard.cc:142] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN)to use the following CPU instructions in performance-critical operations:  AVX2 FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2021-02-22 00:08:49.057990: I tensorflow/core/platform/profile_utils/cpu_utils.cc:104] CPU Frequency: 2400115000 Hz
+2021-02-22 00:08:49.059078: I tensorflow/compiler/xla/service/service.cc:168] XLA service 0x5575d93d2f00 initialized for platform Host (this does not guarantee that XLA will be used). Devices:
+2021-02-22 00:08:49.059124: I tensorflow/compiler/xla/service/service.cc:176]   StreamExecutor device (0): Host, Default Version
+2021-02-22 00:08:49.292804: I tensorflow/compiler/xla/service/service.cc:168] XLA service 0x5575daf99b90 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
+2021-02-22 00:08:49.292859: I tensorflow/compiler/xla/service/service.cc:176]   StreamExecutor device (0): GeForce RTX 2080 Ti, Compute Capability 7.5
+2021-02-22 00:08:49.292869: I tensorflow/compiler/xla/service/service.cc:176]   StreamExecutor device (1): TITAN V, Compute Capability 7.0
+2021-02-22 00:08:49.294085: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1716] Found device 0 with properties: 
+pciBusID: 0000:03:00.0 name: GeForce RTX 2080 Ti computeCapability: 7.5
+coreClock: 1.56GHz coreCount: 68 deviceMemorySize: 10.76GiB deviceMemoryBandwidth: 573.69GiB/s
+2021-02-22 00:08:49.294980: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1716] Found device 1 with properties: 
+pciBusID: 0000:81:00.0 name: TITAN V computeCapability: 7.0
+coreClock: 1.455GHz coreCount: 80 deviceMemorySize: 11.78GiB deviceMemoryBandwidth: 607.97GiB/s
+2021-02-22 00:08:49.295020: I tensorflow/stream_executor/platform/default/dso_loader.cc:48] Successfully opened dynamic library libcudart.so.10.1
+2021-02-22 00:08:49.295068: I tensorflow/stream_executor/platform/default/dso_loader.cc:48] Successfully opened dynamic library libcublas.so.10
+2021-02-22 00:08:49.295100: I tensorflow/stream_executor/platform/default/dso_loader.cc:48] Successfully opened dynamic library libcufft.so.10
+2021-02-22 00:08:49.295130: I tensorflow/stream_executor/platform/default/dso_loader.cc:48] Successfully opened dynamic library libcurand.so.10
+2021-02-22 00:08:49.295160: I tensorflow/stream_executor/platform/default/dso_loader.cc:48] Successfully opened dynamic library libcusolver.so.10
+2021-02-22 00:08:49.295189: I tensorflow/stream_executor/platform/default/dso_loader.cc:48] Successfully opened dynamic library libcusparse.so.10
+2021-02-22 00:08:49.295221: I tensorflow/stream_executor/platform/default/dso_loader.cc:48] Successfully opened dynamic library libcudnn.so.7
+2021-02-22 00:08:49.298819: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1858] Adding visible gpu devices: 0, 1
+2021-02-22 00:08:49.298865: I tensorflow/stream_executor/platform/default/dso_loader.cc:48] Successfully opened dynamic library libcudart.so.10.1
+2021-02-22 00:08:50.225888: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1257] Device interconnect StreamExecutor with strength 1 edge matrix:
+2021-02-22 00:08:50.225956: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1263]      0 1 
+2021-02-22 00:08:50.225965: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1276] 0:   N N 
+2021-02-22 00:08:50.225971: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1276] 1:   N N 
+2021-02-22 00:08:50.228689: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1402] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:0 with 10074 MB memory) -> physical GPU (device: 0, name: GeForce RTX 2080 Ti, pci bus id: 0000:03:00.0, compute capability: 7.5)
+2021-02-22 00:08:50.230212: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1402] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:1 with 10914 MB memory) -> physical GPU (device: 1, name: TITAN V, pci bus id: 0000:81:00.0, compute capability: 7.0)
+INFO:tensorflow:Using MirroredStrategy with devices ('/job:localhost/replica:0/task:0/device:GPU:0', '/job:localhost/replica:0/task:0/device:GPU:1')
+I0222 00:08:50.235015 139726764861248 mirrored_strategy.py:341] Using MirroredStrategy with devices ('/job:localhost/replica:0/task:0/device:GPU:0', '/job:localhost/replica:0/task:0/device:GPU:1')
+I0222 00:08:51.168824 139726764861248 trainers.py:149] Building the model...
+WARNING:tensorflow:AutoGraph could not transform <bound method PythonHandler.emit of <PythonHandler <stderr> (NOTSET)>> and will run it as-is.
+Please report this to the TensorFlow team. When filing the bug, set the verbosity to 10 (on Linux, `export AUTOGRAPH_VERBOSITY=10`) and attach the full output.
+Cause: invalid syntax (tmplg49_rsa.py, line 52)
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+W0222 00:08:57.137063 139689046144768 ag_logging.py:146] AutoGraph could not transform <bound method PythonHandler.emit of <PythonHandler <stderr> (NOTSET)>> and will run it as-is.
+Please report this to the TensorFlow team. When filing the bug, set the verbosity to 10 (on Linux, `export AUTOGRAPH_VERBOSITY=10`) and attach the full output.
+Cause: invalid syntax (tmplg49_rsa.py, line 52)
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+I0222 00:08:56.633822 139689046144768 api.py:598] Input to Module: tensor_to_audio
+Keys: ListWrapper(['audio_tensor'])
+In: [[4, 64000, 1]]
+
+I0222 00:08:57.331093 139689046144768 api.py:598] Output from Module: tensor_to_audio
+Out: {'signal': [4, 64000], 'controls': {'samples': [4, 64000, 1]}}
+

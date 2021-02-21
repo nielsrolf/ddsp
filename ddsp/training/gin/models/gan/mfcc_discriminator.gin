@@ -1,0 +1,7 @@
+# -*-Python-*-
+
+import ddsp.training
+
+get_combined_model.discriminator = @discriminators.MfccTimeConstantRnnDiscriminator())
+MfccTimeConstantRnnDiscriminator.input_keys = ['discriminator_audio', 'f0_hz', 'loudness_db']
+MfccTimeConstantRnnDiscriminator.spectral_op = 'compute_mfcc'

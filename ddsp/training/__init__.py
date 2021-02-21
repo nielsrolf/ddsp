@@ -18,6 +18,7 @@
 from ddsp.training import cloud
 from ddsp.training import data
 from ddsp.training import decoders
+from ddsp.training import discriminators
 from ddsp.training import encoders
 from ddsp.training import eval_util
 from ddsp.training import evaluators

@@ -1,0 +1,5 @@
+# -*-Python-*-
+
+import ddsp.training
+
+get_combined_model.model_cls = @models.WGAN

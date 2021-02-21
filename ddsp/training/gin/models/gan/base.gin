@@ -1,0 +1,25 @@
+# -*-Python-*-
+
+import ddsp
+import ddsp.training
+
+get_model.model = "combined"
+
+# Preprocessor
+get_combined_model.preprocessor = @preprocessing.F0LoudnessPreprocessor()
+F0LoudnessPreprocessor.time_steps = 1000
+
+# Encoder
+get_combined_model.encoder = @encoders.MfccTimeConstantRnnEncoder()
+MfccTimeConstantRnnEncoder.rnn_channels = 512
+MfccTimeConstantRnnEncoder.rnn_type = 'gru'
+MfccTimeConstantRnnEncoder.z_dims = 16
+MfccTimeConstantRnnEncoder.z_time_steps = 125
+
+# Losses
+get_combined_model.losses = [
+    @losses.SpectralLoss(),
+]
+SpectralLoss.loss_type = 'L1'
+SpectralLoss.mag_weight = 1.0
+SpectralLoss.logmag_weight = 1.0

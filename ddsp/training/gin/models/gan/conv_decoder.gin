@@ -1,0 +1,13 @@
+# -*-Python-*-
+
+import ddsp
+import ddsp.training
+
+# Decoder
+get_combined_model.decoder = @decoders.UntitledGAN()
+UntitledGAN.input_keys = ('ld_scaled', 'f0_hz', 'z')
+UntitledGAN.ch = 64
+
+get_combined_model.processor_group = @processors.ProcessorGroup()
+
+ProcessorGroup.dag = [(@synths.TensorToAudio(), ['audio_tensor'])]

@@ -36,6 +36,7 @@ class Trainer(object):
                lr_decay_steps=10000,
                lr_decay_rate=0.98,
                grad_clip_norm=3.0,
+               d_steps_per_g_steps=4,
                restore_keys=None):
     """Constructor.
 
@@ -63,10 +64,13 @@ class Trainer(object):
         decay_rate=lr_decay_rate)
 
     if self.model.is_gan:
+      self.d_steps_per_g_steps = d_steps_per_g_steps
       d_lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
           initial_learning_rate=learning_rate_d,
           decay_steps=lr_decay_steps,
           decay_rate=lr_decay_rate) # TODO correct learning schedule + optimizer?
+    else:
+      self.d_steps_per_g_steps = 1
 
     with self.strategy.scope():
       optimizer = tf.keras.optimizers.Adam(lr_schedule)
@@ -137,7 +141,8 @@ class Trainer(object):
 
   def run(self, fn, *args, **kwargs):
     """Distribute and run function on processors."""
-    return self.strategy.run(fn, args=args, kwargs=kwargs)
+    run_opts = tf.compat.v1.RunOptions(report_tensor_allocations_upon_oom = True)
+    return self.strategy.run(fn, args=args, kwargs=kwargs, options=run_opts)
 
   def build(self, batch):
     """Build the model by running a distributed batch through it."""
@@ -157,22 +162,27 @@ class Trainer(object):
     """Distributed training step."""
     # Wrap iterator in tf.function, slight speedup passing in iter vs batch.
     batch = next(inputs) if hasattr(inputs, '__next__') else inputs
-    losses = self.run(self.step_fn, batch)
+    losses = self.run(self.step_fn_g, batch)
+    for _ in range(self.d_steps_per_g_steps):
+      batch = next(inputs)
+      d_losses = self.run(self.step_fn_d, batch)
+    losses.update(d_losses)
     # Add up the scalar losses across replicas.
     n_replicas = self.strategy.num_replicas_in_sync
     return {k: self.psum(v, axis=None) / n_replicas for k, v in losses.items()}
-
+  
   @tf.function
-  def step_fn(self, batch):
+  def step_fn_g(self, batch):
     """Per-Replica training step."""
     outputs, losses, grads = self.model.step_fn(batch)
     grads, _ = tf.clip_by_global_norm(grads, self.grad_clip_norm)
     self.optimizer.apply_gradients(zip(grads, self.model.generator_variables))
-
-    if self.model.is_gan:
-      d_losses, grads = self.model.discriminator_step_fn(outputs)
-      grads, _ = tf.clip_by_global_norm(grads, self.grad_clip_norm)
-      self.d_optimizer.apply_gradients(zip(grads, self.model.discriminator_variables))
-      losses.update(d_losses)
-
     return losses
+
+  @tf.function
+  def step_fn_d(self, batch):
+    outputs = self.model(batch)
+    d_losses, grads = self.model.discriminator_step_fn(outputs)
+    grads, _ = tf.clip_by_global_norm(grads, self.grad_clip_norm)
+    self.d_optimizer.apply_gradients(zip(grads, self.model.discriminator_variables))
+    return d_losses

@@ -1,0 +1,6 @@
+# -*-Python-*-
+
+import ddsp.training
+
+get_combined_model.discriminator = @discriminators.ParallelWaveGANDiscriminator()
+ParallelWaveGANDiscriminator.input_keys = ['discriminator_audio', 'f0_hz', 'loudness_db']
