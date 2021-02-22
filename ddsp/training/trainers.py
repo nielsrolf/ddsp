@@ -163,10 +163,11 @@ class Trainer(object):
     # Wrap iterator in tf.function, slight speedup passing in iter vs batch.
     batch = next(inputs) if hasattr(inputs, '__next__') else inputs
     losses = self.run(self.step_fn_g, batch)
-    for _ in range(self.d_steps_per_g_steps):
-      batch = next(inputs)
-      d_losses = self.run(self.step_fn_d, batch)
-    losses.update(d_losses)
+    if self.model.is_gan:
+      for _ in range(self.d_steps_per_g_steps):
+        batch = next(inputs)
+        d_losses = self.run(self.step_fn_d, batch)
+      losses.update(d_losses)
     # Add up the scalar losses across replicas.
     n_replicas = self.strategy.num_replicas_in_sync
     return {k: self.psum(v, axis=None) / n_replicas for k, v in losses.items()}

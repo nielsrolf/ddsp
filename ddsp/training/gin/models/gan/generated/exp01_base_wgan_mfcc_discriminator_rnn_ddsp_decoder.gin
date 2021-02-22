@@ -1,0 +1,4 @@
+include 'models/gan/base.gin'
+include 'models/gan/wgan.gin'
+include 'models/gan/mfcc_discriminator.gin'
+include 'models/gan/rnn_ddsp_decoder.gin'

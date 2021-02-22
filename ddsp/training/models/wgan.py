@@ -75,6 +75,7 @@ class WGAN(Model):
     grads = tape.gradient(losses['total_loss'], self.generator_variables)
     return outputs, losses, grads
   
+  @tf.function
   def gradient_penalty(self, batch):
     """ Calculates the gradient penalty.
 
@@ -103,6 +104,7 @@ class WGAN(Model):
     gp = tf.reduce_mean((norm - 1.0) ** 2)
     return gp
 
+  @tf.function
   def discriminator_step_fn(self, batch):
     """At this point, the batch already contains the generator output.
     The samples in batch['audio'] and batch['audio_synth'] correspond to each other.

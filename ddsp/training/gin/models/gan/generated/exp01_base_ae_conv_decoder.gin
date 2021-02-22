@@ -1,0 +1,3 @@
+include 'models/gan/base.gin'
+include 'models/gan/ae.gin'
+include 'models/gan/conv_decoder.gin'

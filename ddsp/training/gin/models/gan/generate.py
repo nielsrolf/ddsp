@@ -3,17 +3,20 @@ import os
 
 options = {
     'base': 'models/gan/base.gin',
-    'gan': [
-        'models/gan/lsgan.gin',
-        'models/gan/wgan.gin'
+    'models': [
+        {'models/gan/lsgan.gin': [
+            'models/gan/conv_discriminator.gin',
+            'models/gan/mfcc_discriminator.gin'
+        ]},
+        {'models/gan/wgan.gin': [
+            'models/gan/conv_discriminator.gin',
+            'models/gan/mfcc_discriminator.gin'
+        ]},
+        'models/gan/ae.gin'
     ],
     'decoder': [
         'models/gan/conv_decoder.gin',
         'models/gan/rnn_ddsp_decoder.gin'
-    ],
-    'discriminator': [
-        'models/gan/conv_discriminator.gin',
-        'models/gan/mfcc_discriminator.gin'
     ]
 }
 
@@ -39,7 +42,7 @@ def command_with_ginfile(filepath):
     filepath = os.path.abspath(filepath)
     return (base_command + \
         f"    --save_dir=\"$RESULTS_DIR/{save_dir}\" \\\n"
-        f"    --gin_file={filepath}\n\n")
+        f"    --gin_file={filepath} \n\n")
 
 
 def combine_all(options):

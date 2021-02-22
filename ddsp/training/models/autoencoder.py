@@ -29,6 +29,7 @@ class Autoencoder(Model):
                decoder=None,
                processor_group=None,
                losses=None,
+               discriminator=None, # this one is ignored
                **kwargs):
     super().__init__(**kwargs)
     self.preprocessor = preprocessor
