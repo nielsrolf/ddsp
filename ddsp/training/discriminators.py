@@ -8,6 +8,9 @@ from ddsp import spectral_ops
 from ddsp.core import resample
 
 
+tfkl = tf.keras.layers
+
+
 class Discriminator(nn.DictLayer):
   """Base class to implement disriminators.
   The discriminator can take a mix of conditional inputs (such as f0_hz) and generated audio.
